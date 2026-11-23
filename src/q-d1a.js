@@ -1,4 +1,4 @@
-/* Domain 1 · Developing and optimizing dbt models · bank expansion A (26) */
+/* Domain 1, part A: sources, materializations, DRY, commands, DAG. */
 window.DBT_Q.push(
 {
   id: 'd1-src-count', d: 'd1', type: 'mc',
@@ -12,8 +12,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Cada source corresponde a uma combinação de **database + schema**. Aqui existem três: ~raw.stripe~, ~raw.shopify~ e ~finance_db.public~. As tabelas ficam dentro de cada source, totalizando 5.`,
-    `A source ~finance_db.public~ precisa de ~database: finance_db~ e ~schema: public~ (ou de um nome de source igual ao schema).`
+    `Each source corresponds to one **database + schema** combination. Here there are three: ~raw.stripe~, ~raw.shopify~ and ~finance_db.public~. The tables sit inside each source, 5 in total.`,
+    `The ~finance_db.public~ source needs ~database: finance_db~ and ~schema: public~ (or a source name equal to the schema).`
   ],
   doc: 'https://docs.getdbt.com/docs/build/sources'
 },
@@ -29,8 +29,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Valores padrão de uma source: ~database~ = database do target ativo; ~schema~ = **nome da source**; ~identifier~ = nome da tabela. Por isso ~source('hubspot', 'contacts')~ vira ~<database_do_target>.hubspot.contacts~.`,
-    `Nenhuma dessas propriedades é obrigatória; você só as declara quando o objeto físico foge desse padrão.`
+    `Source defaults: ~database~ = the active target's database; ~schema~ = the **source name**; ~identifier~ = the table name. That is why ~source('hubspot', 'contacts')~ becomes ~<target_database>.hubspot.contacts~.`,
+    `None of these properties is required; you declare them only when the physical object departs from these defaults.`
   ],
   doc: 'https://docs.getdbt.com/reference/source-properties'
 },
@@ -46,15 +46,16 @@ window.DBT_Q.push(
   ],
   answer: 1,
   exp: [
-    `~source:stripe.payments+~ seleciona a tabela da source e **todos os descendentes** dela. ~dbt ls~ (ou ~dbt list~) só lista os nós, sem executar nada, o que é ideal para avaliar impacto.`,
-    `• O ~+~ à esquerda seleciona ancestrais, e sources não têm ancestrais.`,
-    `• Sem o método ~source:~ e sem o ~+~, não há seleção de descendentes.`,
-    `• ~source freshness~ mede atraso de carga, não dependências.`
+    `~source:stripe.payments+~ selects the source table and **all its descendants**. ~dbt ls~ (or ~dbt list~) only lists the nodes, without running anything, which is ideal for assessing impact.`,
+    `• A ~+~ on the left selects ancestors, and sources have no ancestors.`,
+    `• Without the ~source:~ method and the ~+~, there is no descendant selection.`,
+    `• ~source freshness~ measures load delay, not dependencies.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods#source'
 },
 {
-  id: 'd1-src-why', d: 'd1', type: 'multi', choose: 2,
+  id: 'd1-src-why', d: 'd1', type: 'multi',
+  choose: 2,
   topic: 'Identifying and verifying any raw object dependencies',
   stem: `Which two benefits do you get from replacing hard-coded raw table names with ~{{ source() }}~? (Choose two.)`,
   options: [
@@ -66,8 +67,8 @@ window.DBT_Q.push(
   ],
   answers: [0, 1],
   exp: [
-    `Com ~source()~, o dbt passa a conhecer a dependência: as tabelas brutas viram nós no DAG e na documentação, e você pode declarar data tests e ~freshness~ nelas. O nome físico também fica num único lugar (o YAML).`,
-    `O dbt não armazena dados localmente, não deduplica nada e não gerencia a tabela bruta. Ele só gera o SQL que roda no warehouse.`
+    `With ~source()~, dbt knows about the dependency: raw tables become nodes in the DAG and in the documentation, and you can declare data tests and ~freshness~ on them. The physical name also lives in a single place (the YAML).`,
+    `dbt doesn't store data locally, doesn't deduplicate anything and doesn't manage the raw table. It only generates the SQL that runs in the warehouse.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/sources'
 },
@@ -75,9 +76,11 @@ window.DBT_Q.push(
   id: 'd1-mat-default', d: 'd1', type: 'fill',
   topic: 'Understanding core dbt materializations',
   stem: `Complete the blank. If no ~materialized~ config is set anywhere for a SQL model, dbt builds it as a ______.`,
-  accept: ['view'],
+  accept: [
+    `view`
+  ],
   exp: [
-    `O padrão é ~view~: barata de construir e sempre atualizada, mas recalculada a cada consulta. Projetos costumam configurar ~+materialized~ por pasta no ~dbt_project.yml~ (por exemplo, views em staging e tables em marts).`
+    `The default is ~view~: cheap to build and always up to date, but recomputed on every query. Projects usually set ~+materialized~ per folder in ~dbt_project.yml~ (for example, views in staging and tables in marts).`
   ],
   doc: 'https://docs.getdbt.com/docs/build/materializations'
 },
@@ -85,7 +88,13 @@ window.DBT_Q.push(
   id: 'd1-mat-match', d: 'd1', type: 'match',
   topic: 'Understanding core dbt materializations',
   stem: `Match each materialization to its behavior.`,
-  left: [`~view~`, `~table~`, `~incremental~`, `~ephemeral~`, `~materialized_view~`],
+  left: [
+    `~view~`,
+    `~table~`,
+    `~incremental~`,
+    `~ephemeral~`,
+    `~materialized_view~`
+  ],
   right: [
     `Stores only the query; it runs every time the object is queried`,
     `Rebuilt from scratch on every run`,
@@ -95,11 +104,11 @@ window.DBT_Q.push(
   ],
   answer: [0, 1, 2, 3, 4],
   exp: [
-    `• **view**: só guarda a consulta; custo zero no build, custo em toda leitura.`,
-    `• **table**: ~create table as~ completo a cada execução.`,
-    `• **incremental**: processa só o que mudou após o primeiro build (usa ~is_incremental()~).`,
-    `• **ephemeral**: vira CTE nos consumidores; não existe no banco.`,
-    `• **materialized_view**: a plataforma mantém o resultado atualizado; o dbt reage a mudanças de configuração com ~on_configuration_change~.`
+    `• **view**: only stores the query; zero cost at build time, a cost on every read.`,
+    `• **table**: a full ~create table as~ on every run.`,
+    `• **incremental**: processes only what changed after the first build (uses ~is_incremental()~).`,
+    `• **ephemeral**: becomes a CTE in its consumers; doesn't exist in the database.`,
+    `• **materialized_view**: the platform keeps the result up to date; dbt reacts to configuration changes with ~on_configuration_change~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/materializations'
 },
@@ -115,8 +124,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~on_configuration_change~ define o que acontece quando o dbt detecta mudança de configuração numa materialized view: ~apply~ (padrão) aplica a mudança; ~continue~ segue sem aplicar e emite um warning; ~fail~ interrompe com erro.`,
-    `~full_refresh: false~ só impede reconstruções completas; não controla a reação a mudanças de configuração.`
+    `~on_configuration_change~ defines what happens when dbt detects a configuration change on a materialized view: ~apply~ (default) applies the change; ~continue~ moves on without applying it and raises a warning; ~fail~ stops with an error.`,
+    `~full_refresh: false~ only prevents full rebuilds; it doesn't control the reaction to configuration changes.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/materializations#materialized-view'
 },
@@ -132,8 +141,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Modelos Python não podem referenciar modelos ephemeral, porque não existe objeto no banco para ler. Ephemeral também não suporta contratos e não pode ter ~access: public~.`,
-    `Eles não viram views temporárias: o SQL é injetado como CTE no modelo consumidor. Por isso não há o que consultar depois da execução.`
+    `Python models can't reference ephemeral models, because there is no object in the database to read. Ephemeral models also don't support contracts and can't have ~access: public~.`,
+    `They don't become temporary views: the SQL is injected as a CTE into the consuming model. That is why there is nothing to query after the run.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/materializations#ephemeral'
 },
@@ -149,8 +158,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Com ~{% set methods = [...] %}~ e ~{% for m in methods %}~, uma única linha gera todas as colunas. Para acrescentar um método, basta incluí-lo na lista (ou buscá-lo dinamicamente com ~dbt_utils.get_column_values~).`,
-    `Cuidado com a vírgula da última iteração: use ~{% if not loop.last %},{% endif %}~.`
+    `With ~{% set methods = [...] %}~ and ~{% for m in methods %}~, a single line generates all the columns. To add a method, just add it to the list (or fetch the list dynamically with ~dbt_utils.get_column_values~).`,
+    `Watch out for the comma on the last iteration: use ~{% if not loop.last %},{% endif %}~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/jinja-macros'
 },
@@ -166,10 +175,10 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dbt_utils.generate_surrogate_key~ padroniza a geração (trata NULLs e concatena de forma consistente em cada adapter). Reaproveitar macros testadas de pacotes é o caminho DRY.`,
-    `• Um teste só detectaria problemas; não padroniza nada.`,
-    `• ~row_number()~ não é estável entre execuções.`,
-    `• ~unique_key~ é config de incrementais, não gera chave.`
+    `~dbt_utils.generate_surrogate_key~ standardizes key generation (it handles NULLs and concatenates consistently on every adapter). Reusing tested macros from packages is the DRY way.`,
+    `• A test would only detect problems; it standardizes nothing.`,
+    `• ~row_number()~ isn't stable across runs.`,
+    `• ~unique_key~ is an incremental config; it doesn't generate a key.`
   ],
   doc: 'https://hub.getdbt.com/dbt-labs/dbt_utils/latest/'
 },
@@ -177,14 +186,22 @@ window.DBT_Q.push(
   id: 'd1-dry-endmacro', d: 'd1', type: 'fill',
   topic: 'Conceptualizing modularity and how to incorporate DRY principles',
   stem: `Complete the macro so it compiles. What keyword goes in the blank?`,
-  code: [{ lang: 'sql', label: 'macros/cents_to_dollars.sql', text: `
+  code: [
+    {
+      lang: 'sql',
+      label: 'macros/cents_to_dollars.sql',
+      text: `
     {% macro cents_to_dollars(column_name, scale=2) %}
         round({{ column_name }} / 100.0, {{ scale }})
-    {% ______ %}` }],
-  accept: ['endmacro'],
+    {% ______ %}`
+    }
+  ],
+  accept: [
+    `endmacro`
+  ],
   exp: [
-    `Macros ficam entre ~{% macro nome(args) %}~ e ~{% endmacro %}~, em arquivos ~.sql~ dentro de ~macros/~. Sem o fechamento, o dbt acusa *Reached EOF without finding a close tag for macro*.`,
-    `Argumentos podem ter valor padrão (~scale=2~), e a chamada fica ~{{ cents_to_dollars('amount_cents') }}~.`
+    `Macros go between ~{% macro name(args) %}~ and ~{% endmacro %}~, in ~.sql~ files inside ~macros/~. Without the closing tag, dbt reports *Reached EOF without finding a close tag for macro*.`,
+    `Arguments can have a default value (~scale=2~), and the call is ~{{ cents_to_dollars('amount_cents') }}~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/jinja-macros'
 },
@@ -200,8 +217,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~var()~ centraliza o valor (DRY), e o flag ~--vars~ na linha de comando tem precedência sobre ~vars:~ do ~dbt_project.yml~, sem mudar código. Também é possível dar um padrão na chamada: ~{{ var('start_date', '2020-01-01') }}~.`,
-    `As outras opções exigem editar código ou acrescentam joins desnecessários.`
+    `~var()~ centralizes the value (DRY), and the ~--vars~ flag on the command line takes precedence over ~vars:~ in ~dbt_project.yml~, without changing code. You can also give a default in the call: ~{{ var('start_date', '2020-01-01') }}~.`,
+    `The other options require editing code or add unnecessary joins.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/project-variables'
 },
@@ -217,8 +234,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dbt build~ junta ~run~, ~test~ (data e unit tests), ~seed~ e ~snapshot~ numa única execução, respeitando o DAG: cada nó é testado logo depois de construído, e falhas pulam os dependentes.`,
-    `~dbt run~ só materializa modelos; testes exigem ~dbt test~ ou ~dbt build~.`
+    `~dbt build~ combines ~run~, ~test~ (data and unit tests), ~seed~ and ~snapshot~ in a single run, following the DAG: each node is tested right after it is built, and failures skip its dependents.`,
+    `~dbt run~ only materializes models; tests require ~dbt test~ or ~dbt build~.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/build'
 },
@@ -234,8 +251,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dbt docs generate~ compila o projeto e consulta o warehouse para criar o ~catalog.json~ (tipos, estatísticas); com o ~manifest.json~, ele alimenta o site. ~dbt docs serve~ apenas serve esses arquivos localmente; não gera nada.`,
-    `~--no-compile~ pula a etapa de compilação do ~docs generate~.`
+    `~dbt docs generate~ compiles the project and queries the warehouse to create ~catalog.json~ (types, statistics); together with ~manifest.json~, it feeds the site. ~dbt docs serve~ only serves these files locally; it generates nothing.`,
+    `~--no-compile~ skips the compilation step of ~docs generate~.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/cmd-docs'
 },
@@ -251,10 +268,10 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Por padrão o dbt infere os tipos das colunas do CSV. ~column_types~ força o tipo de colunas específicas. Como a tabela já existe com o tipo errado, use ~--full-refresh~ para recriá-la.`,
-    `• ~quote_columns~ trata as aspas dos **nomes** das colunas.`,
-    `• ~delimiter~ muda o separador.`,
-    `• Converter depois não recupera os zeros já perdidos.`
+    `By default dbt infers the CSV column types. ~column_types~ forces the type of specific columns. Since the table already exists with the wrong type, use ~--full-refresh~ to recreate it.`,
+    `• ~quote_columns~ handles quoting of the column **names**.`,
+    `• ~delimiter~ changes the separator.`,
+    `• Converting afterward doesn't recover the zeros already lost.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/column_types'
 },
@@ -262,10 +279,12 @@ window.DBT_Q.push(
   id: 'd1-cmd-show-inline', d: 'd1', type: 'fill',
   topic: 'Using commands such as build, run, test, docs, show, snapshot, and seed',
   stem: `Complete the command to run an ad hoc query against a model and preview the result, without creating a model file: ~dbt show --______ "select count(*) from {{ ref('fct_orders') }}"~`,
-  accept: ['inline'],
+  accept: [
+    `inline`
+  ],
   exp: [
-    `~dbt show --inline "..."~ compila o SQL informado (inclusive com ~ref~ e macros), executa-o no warehouse e mostra o resultado. ~--limit~ controla quantas linhas aparecem (padrão 5).`,
-    `~dbt compile --inline~ também existe, mas só renderiza o SQL, sem executar.`
+    `~dbt show --inline "..."~ compiles the given SQL (including ~ref~ and macros), runs it in the warehouse and shows the result. ~--limit~ controls how many rows appear (default 5).`,
+    `~dbt compile --inline~ also exists, but it only renders the SQL, without running it.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/show'
 },
@@ -281,10 +300,10 @@ window.DBT_Q.push(
   ],
   answer: 1,
   exp: [
-    `Na sintaxe de seleção, a **vírgula** faz interseção (precisa atender aos dois critérios) e o **espaço** faz união (atende a qualquer um).`,
-    `• A versão com espaço pegaria todos os modelos com a tag e todos os incrementais.`,
-    `• O ~--exclude~ removeria justamente os incrementais.`,
-    `• O ~+~ é operador de grafo, não de conjunto.`
+    `In selection syntax, a **comma** is an intersection (both criteria must match) and a **space** is a union (either one matches).`,
+    `• The version with a space would select every model with the tag and every incremental model.`,
+    `• The ~--exclude~ would remove exactly the incremental models.`,
+    `• ~+~ is a graph operator, not a set operator.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/set-operators'
 },
@@ -292,7 +311,13 @@ window.DBT_Q.push(
   id: 'd1-cmd-selector-match', d: 'd1', type: 'match',
   topic: 'Using commands such as build, run, test, docs, show, snapshot, and seed',
   stem: `Match each selector to the nodes it selects.`,
-  left: [`~tag:finance~`, `~path:models/staging~`, `~config.materialized:incremental~`, `~2+fct_orders~`, `~fct_orders+~`],
+  left: [
+    `~tag:finance~`,
+    `~path:models/staging~`,
+    `~config.materialized:incremental~`,
+    `~2+fct_orders~`,
+    `~fct_orders+~`
+  ],
   right: [
     `Every node tagged finance`,
     `Every node inside the models/staging directory`,
@@ -302,7 +327,7 @@ window.DBT_Q.push(
   ],
   answer: [0, 1, 2, 3, 4],
   exp: [
-    `Métodos (~tag:~, ~path:~, ~config.~, ~source:~, ~state:~ etc.) filtram por propriedades do nó. Operadores de grafo (~+~ e ~n+~) expandem para ancestrais ou descendentes: ~2+~ limita a dois graus acima; ~+~ à direita pega todos os descendentes.`
+    `Methods (~tag:~, ~path:~, ~config.~, ~source:~, ~state:~, etc.) filter by node properties. Graph operators (~+~ and ~n+~) expand to ancestors or descendants: ~2+~ limits it to two degrees up; ~+~ on the right selects all descendants.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods'
 },
@@ -318,8 +343,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Convenção do guia de estrutura: ~stg_[source]__[entity]s~, com prefixo ~stg_~, nome da source, **dois underscores** e a entidade no plural. Fica fácil ver a origem e ordenar os arquivos.`,
-    `Intermediários seguem ~int_[entity]s_[verb]s~ (ex.: ~int_payments_pivoted_to_orders~); marts usam ~fct_~ e ~dim_~.`
+    `The convention from the structure guide: ~stg_[source]__[entity]s~, with the ~stg_~ prefix, the source name, **two underscores** and the entity in the plural. It makes the origin easy to see and the files easy to sort.`,
+    `Intermediate models follow ~int_[entity]s_[verb]s~ (e.g. ~int_payments_pivoted_to_orders~); marts use ~fct_~ and ~dim_~.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/how-we-structure/2-staging'
 },
@@ -335,8 +360,8 @@ window.DBT_Q.push(
     `Exposures (dashboards, ML models, apps)`
   ],
   exp: [
-    `O fluxo recomendado vai da esquerda para a direita, sem voltar: sources → staging (limpeza 1:1) → intermediate (lógica reutilizável) → marts (entidades de negócio) → exposures (quem consome).`,
-    `Linhas que pulam camadas ou voltam no DAG são sinais de problema.`
+    `The recommended flow goes left to right, never backward: sources → staging (1:1 cleaning) → intermediate (reusable logic) → marts (business entities) → exposures (who consumes the data).`,
+    `Lines that skip layers or go back in the DAG are warning signs.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview'
 },
@@ -352,8 +377,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Esse padrão (*rejoining of upstream concepts*) cria dependências redundantes e confunde o DAG. Se ~int_orders_enriched~ já parte de ~stg_orders~, leve adiante as colunas necessárias e deixe ~fct_orders~ depender só do intermediário.`,
-    `Mudar a materialização, adicionar testes ou duplicar lógica não resolve a estrutura.`
+    `This pattern (*rejoining of upstream concepts*) creates redundant dependencies and muddles the DAG. If ~int_orders_enriched~ already starts from ~stg_orders~, carry the needed columns forward and make ~fct_orders~ depend only on the intermediate model.`,
+    `Changing the materialization, adding tests or duplicating logic doesn't fix the structure.`
   ],
   doc: 'https://docs.getdbt.com/blog/essential-dbt-project-checklist'
 },
@@ -369,7 +394,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Staging é a camada de limpeza 1:1 com a source: renomear, converter tipos, cálculos simples (centavos para reais) e categorizações com ~case when~. Joins, agregações e combinações de várias fontes ficam em intermediate ou marts.`
+    `Staging is the 1:1 cleaning layer on top of the source: renaming, casting types, simple calculations (cents to dollars) and categorizing with ~case when~. Joins, aggregations and combining several sources belong in intermediate or marts.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/how-we-structure/2-staging'
 },
@@ -385,8 +410,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `No ~dbt_project.yml~, chaves aninhadas sob ~models:~ podem ser pastas ou configs. O ~+~ deixa claro que é config. É recomendado sempre e obrigatório em alguns casos (por exemplo, ~+grants~ e configs com valor de dicionário).`,
-    `Não confunda com o ~+~ dentro de ~grants~ (~'+select'~), que significa "adicionar" em vez de substituir.`
+    `In ~dbt_project.yml~, keys nested under ~models:~ can be folders or configs. The ~+~ makes it clear it is a config. It is always recommended and required in some cases (for example, ~+grants~ and configs whose value is a dictionary).`,
+    `Don't confuse it with the ~+~ inside ~grants~ (~'+select'~), which means "add" instead of replace.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/plus-prefix'
 },
@@ -402,8 +427,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~on-run-start~ e ~on-run-end~ rodam **uma vez** por invocação, antes ou depois de todos os nós. ~pre-hook~ e ~post-hook~ rodam **para cada** modelo, seed ou snapshot configurado.`,
-    `Para privilégios em objetos (select em tabelas e views), prefira a config ~grants~.`
+    `~on-run-start~ and ~on-run-end~ run **once** per invocation, before or after all nodes. ~pre-hook~ and ~post-hook~ run **for each** configured model, seed or snapshot.`,
+    `For privileges on objects (select on tables and views), prefer the ~grants~ config.`
   ],
   doc: 'https://docs.getdbt.com/reference/project-configs/on-run-start-on-run-end'
 },
@@ -419,9 +444,9 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~alias~ muda só o nome do objeto no banco (o macro ~generate_alias_name~ usa esse valor). O nome do **nó** continua sendo o nome do arquivo, então o ~ref()~ usa ~fct_orders_rebuild~.`,
-    `• ~schema~ muda o schema, não o nome do objeto.`,
-    `• ~identifier~ é propriedade de tabelas de sources, não de modelos.`
+    `~alias~ only changes the object's name in the database (the ~generate_alias_name~ macro uses this value). The **node** name is still the file name, so ~ref()~ uses ~fct_orders_rebuild~.`,
+    `• ~schema~ changes the schema, not the object name.`,
+    `• ~identifier~ is a property of source tables, not of models.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/alias'
 },
@@ -437,8 +462,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Variáveis de ambiente com prefixo ~DBT_ENV_SECRET_~ são mascaradas nos logs e só podem ser usadas em ~profiles.yml~ e ~packages.yml~ (por exemplo, tokens de Git).`,
-    `~var()~ passado por ~--vars~ pode aparecer em logs e artefatos. Senha em arquivo versionado ou em seed é uma falha de segurança.`
+    `Environment variables with the ~DBT_ENV_SECRET_~ prefix are masked in logs and can only be used in ~profiles.yml~ and ~packages.yml~ (for example, Git tokens).`,
+    `A ~var()~ passed with ~--vars~ can show up in logs and artifacts. A password in a versioned file or in a seed is a security flaw.`
   ],
   doc: 'https://docs.getdbt.com/reference/dbt-jinja-functions/env_var'
 }

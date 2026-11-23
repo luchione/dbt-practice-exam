@@ -13,13 +13,13 @@
   const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   const TYPE_INFO = {
-    mc:      { label: () => 'Multiple choice', pt: 'Uma alternativa correta.', hint: () => 'Selecione uma alternativa.' },
-    multi:   { label: q => `Multiple choice · choose ${q.choose}`, pt: 'Escolha N alternativas corretas.', hint: q => `Selecione exatamente ${q.choose} alternativas.` },
-    domc:    { label: () => 'DOMC', pt: 'Alternativas exibidas uma a uma; você responde Sim ou Não para cada.', hint: () => 'As alternativas aparecem uma de cada vez. A questão termina quando você responde Sim ou quando rejeita a alternativa correta.' },
-    match:   { label: () => 'Matching', pt: 'Associar itens de duas colunas.', hint: () => 'Associe cada item a uma opção.' },
-    order:   { label: () => 'Build list', pt: 'Colocar etapas na ordem certa.', hint: () => 'Toque nos itens na ordem correta. Toque num item da sua lista para devolvê-lo.' },
-    fill:    { label: () => 'Fill in the blank', pt: 'Digitar o termo que falta.', hint: () => 'Digite o termo exato que preenche a lacuna.' },
-    hotspot: { label: () => 'Hotspot', pt: 'Clicar no ponto exato do código.', hint: () => 'Clique na linha do código.' }
+    mc:      { label: () => 'Multiple choice', desc: 'One correct option.', hint: () => 'Select one option.' },
+    multi:   { label: q => `Multiple choice · choose ${q.choose}`, desc: 'Choose N correct options.', hint: q => `Select exactly ${q.choose} options.` },
+    domc:    { label: () => 'DOMC', desc: 'Options shown one at a time; you answer Yes or No to each.', hint: () => 'Options appear one at a time. The question ends when you answer Yes or when you reject the correct option.' },
+    match:   { label: () => 'Matching', desc: 'Match items from two columns.', hint: () => 'Match each item to an option.' },
+    order:   { label: () => 'Build list', desc: 'Put steps in the right order.', hint: () => 'Tap the items in the correct order. Tap an item in your list to put it back.' },
+    fill:    { label: () => 'Fill in the blank', desc: 'Type the missing term.', hint: () => 'Type the exact term that fills the blank.' },
+    hotspot: { label: () => 'Hotspot', desc: 'Click the exact spot in the code.', hint: () => 'Click the line in the code.' }
   };
 
   let S = null;      // simulado session
@@ -84,9 +84,9 @@
   function restoreFocus(root, key) { if (!key) return; const el = root.querySelector(`[data-fk="${key}"]`); if (el && !el.disabled) el.focus({ preventScroll: true }); }
   const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
   function fmtDate(t) {
-    if (!t) return 'data desconhecida';
+    if (!t) return 'unknown date';
     const d = new Date(t), p = n => String(n).padStart(2, '0');
-    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
   function excerpt(s, n) {
     const t = plain(s).replace(/\s+/g, ' ').trim();
@@ -236,7 +236,7 @@
     const multi = q.type === 'multi';
     const chosen = oi => multi ? Array.isArray(r) && r.includes(oi) : r === oi;
     const right = oi => multi ? q.answers.includes(oi) : oi === q.answer;
-    const box = h('div', { class: 'opts', role: multi ? 'group' : 'radiogroup', 'aria-label': 'Alternativas' });
+    const box = h('div', { class: 'opts', role: multi ? 'group' : 'radiogroup', 'aria-label': 'Options' });
     perm.forEach((oi, pos) => {
       const sel = chosen(oi);
       let st = sel ? ' is-sel' : '';
@@ -245,7 +245,7 @@
           onclick: () => multi ? toggleMulti(ctx, oi) : ctx.set(oi) },
         h('span', { class: 'opt-key' + (multi ? ' box' : '') }, LETTERS[pos]),
         h('span', { class: 'opt-body' }, optContent(q, oi)),
-        fb && (right(oi) || sel) ? h('span', { class: 'opt-mark', 'aria-label': right(oi) ? 'correta' : 'incorreta' }, right(oi) ? '✓' : '✗') : h('span')));
+        fb && (right(oi) || sel) ? h('span', { class: 'opt-mark', 'aria-label': right(oi) ? 'correct' : 'incorrect' }, right(oi) ? '✓' : '✗') : h('span')));
     });
     return box;
   }
@@ -255,13 +255,13 @@
     if ((!r || !r.done) && !locked) {   // a finished simulado shows the full list even if the question was left open
       const pos = said.length, oi = perm[pos];
       return h('div', { class: 'domc' },
-        h('div', { class: 'domc-meta' }, `Alternativa ${pos + 1}`),
+        h('div', { class: 'domc-meta' }, `Option ${pos + 1}`),
         h('div', { class: 'domc-card', html: md(q.options[oi]) }),
-        h('div', { class: 'domc-q' }, 'Esta alternativa responde corretamente à questão?'),
+        h('div', { class: 'domc-q' }, 'Does this option correctly answer the question?'),
         h('div', { class: 'domc-actions' },
-          h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'yes', onclick: () => ctx.domc(true) }, 'Sim'),
-          h('button', { type: 'button', class: 'btn', 'data-fk': 'no', onclick: () => ctx.domc(false) }, 'Não')),
-        said.length ? h('p', { class: 'domc-prev' }, `${said.length} ${said.length === 1 ? 'alternativa rejeitada' : 'alternativas rejeitadas'} até aqui.`) : null);
+          h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'yes', onclick: () => ctx.domc(true) }, 'Yes'),
+          h('button', { type: 'button', class: 'btn', 'data-fk': 'no', onclick: () => ctx.domc(false) }, 'No')),
+        said.length ? h('p', { class: 'domc-prev' }, `${said.length} ${said.length === 1 ? 'option rejected' : 'options rejected'} so far.`) : null);
     }
     const list = h('ol', { class: 'domc-list' });
     perm.forEach((oi, pos) => {
@@ -271,7 +271,7 @@
       if (fb) { if (oi === q.answer) st = ' is-correct'; else if (shown && said[pos]) st = ' is-wrong'; }
       list.append(h('li', { class: 'domc-item' + st },
         h('span', { html: md(q.options[oi]) }),
-        h('span', { class: 'domc-verdict' }, ctx.noAnswer ? '' : shown ? (said[pos] ? 'Você: Sim' : 'Você: Não') : 'Não exibida')));
+        h('span', { class: 'domc-verdict' }, ctx.noAnswer ? '' : shown ? (said[pos] ? 'You: Yes' : 'You: No') : 'Not shown')));
     });
     return h('div', { class: 'domc' }, list);
   }
@@ -286,18 +286,18 @@
     }
     q.left.forEach((L, i) => {
       const ok = cur[i] === q.answer[i];
-      const sel = h('select', { id: `m-${id}-${i}`, 'data-fk': `m${i}`, disabled: locked, 'aria-label': `Opção para: ${plain(L)}`,
+      const sel = h('select', { id: `m-${id}-${i}`, 'data-fk': `m${i}`, disabled: locked, 'aria-label': `Option for: ${plain(L)}`,
         onchange: e => { const nr = cur.slice(); nr[i] = e.target.value === '' ? null : Number(e.target.value); ctx.set(nr); } },
-        h('option', { value: '' }, 'Selecione…'),
+        h('option', { value: '' }, 'Select…'),
         perm.map(ri => h('option', { value: String(ri), selected: cur[i] === ri }, plain(q.right[ri]))));
       box.append(h('div', { class: 'mrow' + (fb ? (ok ? ' is-correct' : ' is-wrong') : '') },
         h('div', { class: 'mleft', html: md(L) }),
-        h('div', { class: 'mright' }, sel, fb && !ok ? h('div', { class: 'mfix', html: 'Correto: ' + md(q.right[q.answer[i]]) }) : null)));
+        h('div', { class: 'mright' }, sel, fb && !ok ? h('div', { class: 'mfix', html: 'Correct: ' + md(q.right[q.answer[i]]) }) : null)));
     });
     return box;
   }
   function correctOrder(q) {
-    return h('div', { class: 'ord-col ord-correct' }, h('div', { class: 'ord-h' }, 'Ordem correta'),
+    return h('div', { class: 'ord-col ord-correct' }, h('div', { class: 'ord-h' }, 'Correct order'),
       h('ol', { class: 'ord-list' }, q.items.map((t, k) => h('li', {}, h('div', { class: 'ord-item is-correct' }, h('span', { class: 'ord-n' }, String(k + 1)), h('span', { html: md(t) }))))));
   }
   function ansOrder(ctx) {
@@ -305,30 +305,30 @@
     if (ctx.noAnswer) return h('div', { class: 'ord' }, correctOrder(q));
     const cur = Array.isArray(r) ? r : [];
     const avail = perm.filter(i => !cur.includes(i));
-    const pool = h('div', { class: 'ord-col' }, h('div', { class: 'ord-h' }, 'Itens'),
+    const pool = h('div', { class: 'ord-col' }, h('div', { class: 'ord-h' }, 'Items'),
       avail.length
         ? avail.map(i => h('button', { type: 'button', class: 'ord-item', disabled: locked, 'data-fk': `a${i}`, onclick: () => ctx.set(cur.concat(i)) },
             h('span', { class: 'ord-plus', 'aria-hidden': 'true' }, '+'), h('span', { html: md(q.items[i]) })))
-        : h('p', { class: 'ord-empty' }, 'Todos os itens foram posicionados.'));
+        : h('p', { class: 'ord-empty' }, 'All items have been placed.'));
     const list = h('ol', { class: 'ord-list' }, cur.map((i, pos) => h('li', {},
-      h('button', { type: 'button', class: 'ord-item' + (fb ? (i === pos ? ' is-correct' : ' is-wrong') : ''), disabled: locked, 'data-fk': `p${i}`, title: 'Devolver item', onclick: () => ctx.set(cur.filter(x => x !== i)) },
+      h('button', { type: 'button', class: 'ord-item' + (fb ? (i === pos ? ' is-correct' : ' is-wrong') : ''), disabled: locked, 'data-fk': `p${i}`, title: 'Put item back', onclick: () => ctx.set(cur.filter(x => x !== i)) },
         h('span', { class: 'ord-n' }, String(pos + 1)), h('span', { html: md(q.items[i]) })))));
-    const mine = h('div', { class: 'ord-col' }, h('div', { class: 'ord-h' }, 'Sua ordem'),
-      cur.length ? list : h('p', { class: 'ord-empty' }, 'Toque nos itens para montar a sequência.'));
+    const mine = h('div', { class: 'ord-col' }, h('div', { class: 'ord-h' }, 'Your order'),
+      cur.length ? list : h('p', { class: 'ord-empty' }, 'Tap the items to build the sequence.'));
     const box = h('div', { class: 'ord' }, pool, mine);
     if (fb && !grade(q, cur)) box.append(correctOrder(q));
     return box;
   }
   function ansFill(ctx) {
     const { id, q, r, locked, fb } = ctx;
-    if (ctx.noAnswer) return h('div', { class: 'fillbox' }, h('p', { class: 'fill-exp', html: `Resposta esperada: <code>${esc(q.accept[0])}</code>` }));
+    if (ctx.noAnswer) return h('div', { class: 'fillbox' }, h('p', { class: 'fill-exp', html: `Expected answer: <code>${esc(q.accept[0])}</code>` }));
     const ok = grade(q, r);
     const inp = h('input', { type: 'text', id: `fill-${id}`, class: 'fill' + (fb ? (ok ? ' is-correct' : ' is-wrong') : ''), value: r || '', disabled: locked,
-      autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', placeholder: 'Digite o termo', 'aria-label': 'Resposta', 'data-fk': 'fill' });
+      autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', placeholder: 'Type the term', 'aria-label': 'Answer', 'data-fk': 'fill' });
     inp.addEventListener('input', e => ctx.input(e.target.value));
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ctx.submit(); } });
     return h('div', { class: 'fillbox' }, inp,
-      fb ? h('p', { class: 'fill-exp', html: `Resposta esperada: <code>${esc(q.accept[0])}</code>` }) : null);
+      fb ? h('p', { class: 'fill-exp', html: `Expected answer: <code>${esc(q.accept[0])}</code>` }) : null);
   }
   function ansHotspot(ctx) {
     const { q, r, locked, fb } = ctx;
@@ -344,24 +344,24 @@
     const tag = { PASS: '[PASS]', FAIL: '[FAIL 1]', SKIP: '[SKIP]', UNKNOWN: '[NO RECORD]' }[status];
     const tcls = status === 'PASS' ? 't-pass' : status === 'FAIL' ? 't-fail' : 't-muted';
     let summary = null;
-    if (q.type === 'hotspot') summary = h('p', {}, h('strong', {}, 'Linha correta: '), String(q.answer + 1));
-    if (q.type === 'domc' && !ok) summary = h('p', { html: '<strong>Alternativa correta:</strong> ' + md(q.options[q.answer]) });
+    if (q.type === 'hotspot') summary = h('p', {}, h('strong', {}, 'Correct line: '), String(q.answer + 1));
+    if (q.type === 'domc' && !ok) summary = h('p', { html: '<strong>Correct option:</strong> ' + md(q.options[q.answer]) });
     return h('section', { class: `feedback fb-${status === 'UNKNOWN' ? 'skip' : status.toLowerCase()}`, 'aria-live': 'polite' },
       h('div', { class: 'logline' }, left + dots + ' ', h('span', { class: tcls }, tag)),
       h('div', { class: 'fb-body' },
-        h('h3', { class: 'fb-title' }, { PASS: 'Correto', FAIL: 'Incorreto', SKIP: 'Não respondida', UNKNOWN: 'Resultado não registrado' }[status]),
-        ctx.noAnswer ? h('p', { class: 'note' }, 'A alternativa que você marcou não foi guardada: este simulado é anterior ao histórico. O certo ou errado vem do seu progresso no banco.') : null,
+        h('h3', { class: 'fb-title' }, { PASS: 'Correct', FAIL: 'Incorrect', SKIP: 'Not answered', UNKNOWN: 'Result not recorded' }[status]),
+        ctx.noAnswer ? h('p', { class: 'note' }, 'The option you picked was not saved: this practice exam predates the history. Right or wrong comes from your progress in the question bank.') : null,
         summary,
         q.exp.map(p => h('p', { html: md(p) })),
         whyList(ctx),
-        h('a', { class: 'doc', href: q.doc, target: '_blank', rel: 'noopener' }, 'Ler na documentação oficial ↗')));
+        h('a', { class: 'doc', href: q.doc, target: '_blank', rel: 'noopener' }, 'Read in the official docs ↗')));
   }
   // Per-option explanation (questions that carry `why`), in the order the options were shown
   function whyList(ctx) {
     const { q, perm } = ctx;
     if (!Array.isArray(q.why) || !q.options || !perm) return null;
     const right = oi => q.type === 'multi' ? q.answers.includes(oi) : oi === q.answer;
-    return h('div', { class: 'why' }, h('div', { class: 'ord-h' }, 'Por alternativa'),
+    return h('div', { class: 'why' }, h('div', { class: 'ord-h' }, 'Option by option'),
       h('ul', { class: 'why-list' }, perm.map((oi, pos) => h('li', { class: right(oi) ? 'is-right' : 'is-wrong' },
         h('span', { class: 'why-key' }, q.type === 'domc' ? (right(oi) ? '✓' : '✗') : `${LETTERS[pos]} ${right(oi) ? '✓' : '✗'}`),
         h('span', {}, q.type === 'domc' ? h('span', { class: 'why-opt', html: md(q.options[oi]) }) : null, h('span', { html: md(q.why[oi]) }))))));
@@ -378,7 +378,7 @@
       h('div', { class: 'qmeta' },
         h('span', { class: 'qcount' }, ctx.countLabel),
         // during an exam only the question number shows; domain and subtopic would be a hint
-        ctx.blind ? null : h('span', { class: 'chip chip-dom' }, `D${dom.n} · ${dom.pt}`),
+        ctx.blind ? null : h('span', { class: 'chip chip-dom' }, `D${dom.n} · ${dom.en}`),
         ctx.blind ? null : h('span', { class: 'chip' }, TYPE_INFO[q.type].label(q))),
       fb ? h('p', { class: 'qtopic' }, q.topic) : null,
       h('div', { class: 'stem', html: md(q.stem) }),
@@ -424,14 +424,14 @@
     const fb = isGraded(id);
     let note = null;
     if (!fb && X.mode === 'exam' && isComplete(q, r)) {
-      note = h('p', { class: 'saved' }, q.type === 'domc' ? 'Resposta registrada. A correção aparece quando você finalizar a prova.' : 'Resposta salva. Você pode alterá-la até finalizar a prova.');
+      note = h('p', { class: 'saved' }, q.type === 'domc' ? 'Answer recorded. Grading appears when you finish the exam.' : 'Answer saved. You can change it until you finish the exam.');
     }
     const nop = () => {};
     return {
       id, q, r, perm, locked: ro || !!X.locked[id] || X.finished, fb, note,
       blind: X.mode === 'exam' && !X.finished,
       noAnswer: !!X.recon, outcome: X.recon ? outcome(X, id) : null,
-      countLabel: `Questão ${X.idx + 1} de ${X.ids.length}`,
+      countLabel: `Question ${X.idx + 1} of ${X.ids.length}`,
       logPrefix: `${X.idx + 1} of ${X.ids.length}`,
       // a past simulado is read-only; otherwise X is the live session S
       set: ro ? nop : v => { S.resp[id] = v; saveSim(); renderQuiz(); },
@@ -485,12 +485,12 @@
     const graded = X.ids.filter(isGraded);
     const correct = graded.filter(id => outcome(X, id) === 'P').length;
     $('#bar-progress').replaceChildren(...(X === RV
-      ? [h('strong', {}, 'Revisão'), ` · simulado de ${fmtDate(X.startedAt || X.finishedAt)}`]
-      : [h('strong', {}, `${answered}/${n}`), ' respondidas']));
-    $('#bar-score').replaceChildren(...((X.mode === 'study' || X.finished) && graded.length ? [h('strong', {}, `${correct}/${graded.length}`), ' acertos'] : []));
+      ? [h('strong', {}, 'Review'), ` · practice exam from ${fmtDate(X.startedAt || X.finishedAt)}`]
+      : [h('strong', {}, `${answered}/${n}`), ' answered']));
+    $('#bar-score').replaceChildren(...((X.mode === 'study' || X.finished) && graded.length ? [h('strong', {}, `${correct}/${graded.length}`), ' correct'] : []));
     $('#bar-fill').style.width = ((X === RV ? X.idx + 1 : answered) / n * 100) + '%';
     const fin = $('#bar-finish');
-    fin.textContent = X.finished ? 'Ver resultado' : (X.mode === 'exam' ? 'Finalizar prova' : 'Encerrar');
+    fin.textContent = X.finished ? 'See results' : (X.mode === 'exam' ? 'Finish exam' : 'End');
     fin.onclick = askFinish;
     updateTimer();
   }
@@ -501,7 +501,7 @@
     t.hidden = false;
     t.textContent = fmtTime(left);
     t.classList.toggle('is-low', left < 10 * 60000);
-    t.setAttribute('aria-label', `Tempo restante ${fmtTime(left)}`);
+    t.setAttribute('aria-label', `Time remaining ${fmtTime(left)}`);
     if (left <= 0) finish();
   }
   function renderActions() {
@@ -510,20 +510,20 @@
     const last = X.idx === X.ids.length - 1;
     const right = [];
     if (X.mode === 'study' && !locked && q.type !== 'domc') {
-      if (!last) right.push(h('button', { type: 'button', class: 'btn', onclick: () => go(X.idx + 1) }, 'Pular'));
-      right.push(h('button', { type: 'button', class: 'btn btn-primary', disabled: !isComplete(q, r), onclick: submit }, 'Responder'));
+      if (!last) right.push(h('button', { type: 'button', class: 'btn', onclick: () => go(X.idx + 1) }, 'Skip'));
+      right.push(h('button', { type: 'button', class: 'btn btn-primary', disabled: !isComplete(q, r), onclick: submit }, 'Submit'));
     } else if (!last) {
-      right.push(h('button', { type: 'button', class: 'btn btn-primary', onclick: () => go(X.idx + 1) }, 'Próxima →'));
+      right.push(h('button', { type: 'button', class: 'btn btn-primary', onclick: () => go(X.idx + 1) }, 'Next →'));
     } else if (X.finished) {
-      right.push(h('button', { type: 'button', class: 'btn btn-primary', onclick: () => { view = 'results'; render(); scrollTop(); } }, 'Ver resultado'));
+      right.push(h('button', { type: 'button', class: 'btn btn-primary', onclick: () => { view = 'results'; render(); scrollTop(); } }, 'See results'));
     } else {
-      right.push(h('button', { type: 'button', class: 'btn btn-primary', onclick: askFinish }, 'Finalizar'));
+      right.push(h('button', { type: 'button', class: 'btn btn-primary', onclick: askFinish }, 'Finish'));
     }
     $('#actions').replaceChildren(
       h('div', {},
-        h('button', { type: 'button', class: 'btn', disabled: X.idx === 0, onclick: () => go(X.idx - 1) }, '← Anterior'),
+        h('button', { type: 'button', class: 'btn', disabled: X.idx === 0, onclick: () => go(X.idx - 1) }, '← Previous'),
         // DOMC has no going back and no mark-for-review, as in the real exam
-        X.finished || (X.mode === 'exam' && q.type === 'domc') ? null : h('button', { type: 'button', class: 'btn btn-ghost' + (S.flags[id] ? ' is-on' : ''), 'aria-pressed': String(!!S.flags[id]), onclick: toggleFlag }, S.flags[id] ? 'Marcada para revisão' : 'Marcar para revisão')),
+        X.finished || (X.mode === 'exam' && q.type === 'domc') ? null : h('button', { type: 'button', class: 'btn btn-ghost' + (S.flags[id] ? ' is-on' : ''), 'aria-pressed': String(!!S.flags[id]), onclick: toggleFlag }, S.flags[id] ? 'Marked for review' : 'Mark for review')),
       h('div', {}, right));
   }
   function askFinish() {
@@ -538,10 +538,10 @@
     const flagged = S.ids.filter(id => S.flags[id]).length;
     el.hidden = false;
     el.replaceChildren(
-      h('p', {}, h('strong', {}, 'Finalizar o simulado? '), `Você respondeu ${answered} de ${S.ids.length}.` + (flagged ? ` ${flagged} ${flagged === 1 ? 'questão está marcada' : 'questões estão marcadas'} para revisão.` : '') + ' Questões sem resposta contam como erro.'),
+      h('p', {}, h('strong', {}, 'Finish the practice exam? '), `You answered ${answered} of ${S.ids.length}.` + (flagged ? ` ${flagged} ${flagged === 1 ? 'question is marked' : 'questions are marked'} for review.` : '') + ' Unanswered questions count as wrong.'),
       h('div', { class: 'row' },
-        h('button', { type: 'button', class: 'btn btn-primary', onclick: finish }, 'Finalizar e ver resultado'),
-        h('button', { type: 'button', class: 'btn', onclick: () => { confirmFinish = false; renderConfirm(); } }, 'Continuar respondendo')));
+        h('button', { type: 'button', class: 'btn btn-primary', onclick: finish }, 'Finish and see results'),
+        h('button', { type: 'button', class: 'btn', onclick: () => { confirmFinish = false; renderConfirm(); } }, 'Keep answering')));
   }
   function renderPalette() {
     const X = cur();
@@ -552,7 +552,7 @@
       else if (done) cls += ' answered';
       if (X.flags[id]) cls += ' flagged';
       if (i === X.idx) cls += ' current';
-      const title = X.mode === 'exam' && !X.finished ? `Questão ${i + 1}` : `${DOM[q.d].pt} · ${TYPE_INFO[q.type].label(q)}`;
+      const title = X.mode === 'exam' && !X.finished ? `Question ${i + 1}` : `${DOM[q.d].en} · ${TYPE_INFO[q.type].label(q)}`;
       return h('button', { type: 'button', class: cls, 'aria-current': i === X.idx ? 'true' : null, title, onclick: () => go(i) }, String(i + 1));
     }));
   }
@@ -632,11 +632,11 @@
 
   /* ── sync with the account (db capability): local copy first, the account copy follows ── */
   const SYNC_NOTE = {
-    off: 'Guardado neste navegador.',
-    syncing: 'Sincronizando com a sua conta…',
-    on: 'Guardado também na sua conta do Claude: aparece no celular e em outros navegadores.',
-    local: 'Guardado só neste navegador.',
-    error: 'Guardado neste navegador. A sincronização com a sua conta falhou; uma nova tentativa acontece quando você reabrir a página.'
+    off: 'Saved in this browser.',
+    syncing: 'Syncing with your account…',
+    on: 'Also saved to your Claude account: it shows up on your phone and in other browsers.',
+    local: 'Saved only in this browser.',
+    error: 'Saved in this browser. Syncing with your account failed; it will try again when you reopen the page.'
   };
   const tombstone = id => ({ v: 1, id, deleted: true, deletedAt: Date.now() });
   function withTimeout(p, ms) { return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej({ code: 'timeout' }), ms))]); }
@@ -722,9 +722,9 @@
     const num = F.log.length - F.back + 1;
     return {
       id: e.id, q, r: e.resp, perm: e.perm, locked: e.locked, fb: e.locked,
-      countLabel: F.back ? `Fast study · questão ${num} de ${F.log.length + 1}` : `Fast study · questão ${num}`,
+      countLabel: F.back ? `Fast study · question ${num} of ${F.log.length + 1}` : `Fast study · question ${num}`,
       logPrefix: `#${num}`,
-      hint: INSTANT[q.type] ? (q.type === 'mc' ? 'Clique na alternativa: a correção aparece na hora.' : 'Clique na linha: a correção aparece na hora.') : null,
+      hint: INSTANT[q.type] ? (q.type === 'mc' ? 'Click an option: it is graded right away.' : 'Click a line: it is graded right away.') : null,
       set: v => { if (e.locked) return; e.resp = v; if (INSTANT[q.type]) { fastLock(); return; } saveFast(); renderFast(); },
       input: v => { e.resp = v; saveFast(); renderFastActions(); },
       submit: fastSubmit,
@@ -776,71 +776,71 @@
   function renderFastMap() {
     const all = F.log.concat([F]), here = F.log.length - F.back;
     $('#fmap').hidden = !F.log.length;
-    $('#fmap-sum').textContent = `Histórico da sessão (${all.length} questões)`;
+    $('#fmap-sum').textContent = `Session history (${all.length} questions)`;
     $('#fpalette').replaceChildren(...all.map((e, i) => {
       const q = byId[e.id];
       let cls = 'pcell';
       if (e.locked) cls += grade(q, e.resp) ? ' correct' : ' wrong';
       if (i === here) cls += ' current';
-      return h('button', { type: 'button', class: cls, 'aria-current': i === here ? 'true' : null, title: `${DOM[q.d].pt} · ${TYPE_INFO[q.type].label(q)}`, onclick: () => fastGo(F.log.length - i) }, String(i + 1));
+      return h('button', { type: 'button', class: cls, 'aria-current': i === here ? 'true' : null, title: `${DOM[q.d].en} · ${TYPE_INFO[q.type].label(q)}`, onclick: () => fastGo(F.log.length - i) }, String(i + 1));
     }));
   }
   function renderFastBar() {
-    $('#bar-progress').replaceChildren(h('strong', {}, String(F.n)), F.n === 1 ? ' respondida nesta sessão' : ' respondidas nesta sessão');
-    $('#bar-score').replaceChildren(...(F.n ? [h('strong', {}, `${F.c}/${F.n}`), ` acertos (${pct(F.c, F.n)}%)` + (F.streak > 1 ? ` · sequência de ${F.streak}` : '')] : []));
+    $('#bar-progress').replaceChildren(h('strong', {}, String(F.n)), F.n === 1 ? ' answered this session' : ' answered this session');
+    $('#bar-score').replaceChildren(...(F.n ? [h('strong', {}, `${F.c}/${F.n}`), ` correct (${pct(F.c, F.n)}%)` + (F.streak > 1 ? ` · streak of ${F.streak}` : '')] : []));
     const pool = fastPool();
     $('#bar-fill').style.width = (pool.length ? pool.filter(id => FS[id]).length / pool.length * 100 : 0) + '%';
     $('#bar-timer').hidden = true;
     const fin = $('#bar-finish');
-    fin.textContent = 'Sair';
+    fin.textContent = 'Exit';
     fin.onclick = () => { view = 'start'; render(); scrollTop(); };
   }
   function domainOptions(selected) {
     const nWrong = wrongIds().length;
     const avail = Q.filter(q => !reserved(q));
-    return [h('option', { value: 'all', selected: selected === 'all' }, `Todos os domínios (${avail.length} questões)`),
-      h('option', { value: 'wrong', selected: selected === 'wrong', disabled: !nWrong && selected !== 'wrong' }, `Revisar as que errei (${nWrong})`),
-      ...DOMAINS.map(d => h('option', { value: d.id, selected: selected === d.id }, `D${d.n} · ${d.pt} (${avail.filter(q => q.d === d.id).length})`))];
+    return [h('option', { value: 'all', selected: selected === 'all' }, `All domains (${avail.length} questions)`),
+      h('option', { value: 'wrong', selected: selected === 'wrong', disabled: !nWrong && selected !== 'wrong' }, `Review the ones I got wrong (${nWrong})`),
+      ...DOMAINS.map(d => h('option', { value: d.id, selected: selected === d.id }, `D${d.n} · ${d.en} (${avail.filter(q => q.d === d.id).length})`))];
   }
   function reviewButton() {
     const n = wrongIds().length, on = F.domain === 'wrong';
     return h('button', { type: 'button', class: 'fact fact-btn' + (on ? ' is-on' : ''), disabled: !n && !on, 'data-fk': 'review-wrong',
-        title: on ? 'Voltar para todas as questões' : 'Praticar só as questões que você errou',
+        title: on ? 'Back to all questions' : 'Practice only the questions you got wrong',
         onclick: () => setFastDomain(on ? 'all' : 'wrong') },
-      h('b', {}, String(n)), on ? (n === 1 ? ' errada restante · sair da revisão' : ' erradas restantes · sair da revisão') : (n === 1 ? ' errada para revisar →' : ' erradas para revisar →'));
+      h('b', {}, String(n)), on ? (n === 1 ? ' wrong answer left · exit review' : ' wrong answers left · exit review') : (n === 1 ? ' wrong answer to review →' : ' wrong answers to review →'));
   }
   function renderFastTop() {
     const pool = fastPool();
     const shown = pool.filter(id => FS[id]).length;
     $('#fast-top').replaceChildren(
-      h('label', { class: 'fast-filter', for: 'fast-domain' }, h('span', { class: 'ord-h' }, 'Filtro'),
+      h('label', { class: 'fast-filter', for: 'fast-domain' }, h('span', { class: 'ord-h' }, 'Filter'),
         h('select', { id: 'fast-domain', 'data-fk': 'fast-domain', onchange: e => setFastDomain(e.target.value) }, domainOptions(F.domain))),
       h('div', { class: 'fast-stats' },
-        h('span', { class: 'fact' }, h('b', {}, `${shown}/${pool.length}`), ' já apareceram'),
+        h('span', { class: 'fact' }, h('b', {}, `${shown}/${pool.length}`), ' already shown'),
         reviewButton(),
-        F.best > 1 ? h('span', { class: 'fact' }, 'Recorde: ', h('b', {}, String(F.best)), ' seguidas') : null));
+        F.best > 1 ? h('span', { class: 'fact' }, 'Best streak: ', h('b', {}, String(F.best)), ' in a row') : null));
   }
   function renderFastActions() {
     const e = fastEntry(), q = byId[e.id];
     const canFix = !e.locked && !INSTANT[q.type] && q.type !== 'domc';
-    const fixBtn = () => h('button', { type: 'button', class: 'btn btn-primary', disabled: !isComplete(q, e.resp), onclick: fastSubmit }, 'Corrigir');
+    const fixBtn = () => h('button', { type: 'button', class: 'btn btn-primary', disabled: !isComplete(q, e.resp), onclick: fastSubmit }, 'Check');
     const right = [];
     if (F.back) {
       if (canFix) right.push(fixBtn());
-      right.push(h('button', { type: 'button', id: 'fast-next', class: 'btn' + (canFix ? '' : ' btn-primary'), 'data-fk': 'fast-fwd', onclick: () => fastGo(F.back - 1) }, F.back === 1 ? 'Voltar para a atual →' : 'Avançar →'));
+      right.push(h('button', { type: 'button', id: 'fast-next', class: 'btn' + (canFix ? '' : ' btn-primary'), 'data-fk': 'fast-fwd', onclick: () => fastGo(F.back - 1) }, F.back === 1 ? 'Back to current →' : 'Forward →'));
     } else if (!e.locked) {
-      right.push(h('button', { type: 'button', class: 'btn', onclick: fastNext }, 'Pular'));
+      right.push(h('button', { type: 'button', class: 'btn', onclick: fastNext }, 'Skip'));
       if (canFix) right.push(fixBtn());
     } else {
-      right.push(h('button', { type: 'button', id: 'fast-next', class: 'btn btn-primary', onclick: fastNext }, 'Próxima questão →'));
+      right.push(h('button', { type: 'button', id: 'fast-next', class: 'btn btn-primary', onclick: fastNext }, 'Next question →'));
     }
-    const left = [h('button', { type: 'button', class: 'btn', 'data-fk': 'fast-prev', disabled: F.back >= F.log.length, onclick: () => fastGo(F.back + 1) }, '← Anterior')];
-    if (F.back > 1) left.push(h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => fastGo(0) }, `Ir para a atual (${F.log.length + 1})`));
+    const left = [h('button', { type: 'button', class: 'btn', 'data-fk': 'fast-prev', disabled: F.back >= F.log.length, onclick: () => fastGo(F.back + 1) }, '← Previous')];
+    if (F.back > 1) left.push(h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => fastGo(0) }, `Go to current (${F.log.length + 1})`));
     const keys = [];
-    if (!e.locked && (q.type === 'mc' || q.type === 'multi')) keys.push(`1–${q.options.length} escolhem`);
-    if (F.back) keys.push('→ avança'); else if (e.locked) keys.push('Enter ou → próxima');
-    if (F.back < F.log.length) keys.push('← volta');
-    if (keys.length) left.push(h('p', { class: 'kbd-hint' }, 'Atalhos: ' + keys.join(' · ')));
+    if (!e.locked && (q.type === 'mc' || q.type === 'multi')) keys.push(`1–${q.options.length} choose`);
+    if (F.back) keys.push('→ forward'); else if (e.locked) keys.push('Enter or → next');
+    if (F.back < F.log.length) keys.push('← back');
+    if (keys.length) left.push(h('p', { class: 'kbd-hint' }, 'Shortcuts: ' + keys.join(' · ')));
     $('#factions').replaceChildren(h('div', {}, left), h('div', {}, right));
   }
 
@@ -877,7 +877,7 @@
     if (all.seen) {
       const statRow = (tag, name, st) => h('div', { class: 'drow' },
         h('div', { class: 'dname' }, tag ? h('span', { class: 'dnum' }, tag) : null, h('span', {}, name)),
-        h('div', { class: 'dval' }, `${st.lastOk}/${st.seen} certas · ${st.acc}%`),
+        h('div', { class: 'dval' }, `${st.lastOk}/${st.seen} correct · ${st.acc}%`),
         h('div', { class: 'dbar' }, h('i', { class: st.acc >= PASS_PCT ? 'ok' : 'no', style: `width:${Math.max(st.acc, 2)}%` })));
       const topics = [];
       Q.forEach(q => { let t = topics.find(x => x.d === q.d && x.topic === q.topic); if (!t) topics.push(t = { d: q.d, topic: q.topic, ids: [] }); t.ids.push(q.id); });
@@ -885,114 +885,114 @@
         .sort((a, b) => a.st.acc - b.st.acc || b.st.pending - a.st.pending || DOM[a.d].n - DOM[b.d].n);
       const fmtStats = fmtOrder.filter(t => fmtCounts[t]).map(t => ({ t, st: histStats(Q.filter(q => q.type === t).map(q => q.id)) })).filter(x => x.st.seen);
       progress = h('div', { class: 'block' },
-        h('h2', {}, 'Seu progresso no banco'),
+        h('h2', {}, 'Your progress in the question bank'),
         h('div', { class: 'facts' },
-          h('span', { class: 'fact' }, h('b', {}, `${all.seen}/${all.total}`), ' questões vistas'),
-          h('span', { class: 'fact' }, h('b', {}, `${all.acc}%`), ' de acerto na última tentativa'),
-          h('button', { type: 'button', class: 'fact fact-btn', disabled: !all.pending, title: 'Abrir o fast study só com as questões que você errou',
+          h('span', { class: 'fact' }, h('b', {}, `${all.seen}/${all.total}`), ' questions seen'),
+          h('span', { class: 'fact' }, h('b', {}, `${all.acc}%`), ' correct on the latest attempt'),
+          h('button', { type: 'button', class: 'fact fact-btn', disabled: !all.pending, title: 'Open fast study with only the questions you got wrong',
               onclick: () => { prefs.fastDomain = 'wrong'; savePrefs(); startFast(); } },
-            h('b', {}, String(all.pending)), all.pending === 1 ? ' errada para revisar →' : ' erradas para revisar →')),
+            h('b', {}, String(all.pending)), all.pending === 1 ? ' wrong answer to review →' : ' wrong answers to review →')),
         h('div', { class: 'dist res-dom' }, dist.map(d => {
           const st = histStats(Q.filter(q => q.d === d.id).map(q => q.id));
           return h('div', { class: 'drow' },
-            h('div', { class: 'dname' }, h('span', { class: 'dnum' }, `D${d.n}`), h('span', {}, d.pt)),
-            h('div', { class: 'dval' }, st.seen ? `${st.seen}/${st.total} vistas · ${st.acc}%` : `0/${st.total} vistas`),
+            h('div', { class: 'dname' }, h('span', { class: 'dnum' }, `D${d.n}`), h('span', {}, d.en)),
+            h('div', { class: 'dval' }, st.seen ? `${st.seen}/${st.total} seen · ${st.acc}%` : `0/${st.total} seen`),
             h('div', { class: 'dbar' }, h('i', { class: st.seen ? (st.acc >= PASS_PCT ? 'ok' : 'no') : '', style: `width:${st.seen ? Math.max(st.acc, 2) : 0}%` })));
         })),
-        h('p', { class: 'note' }, 'A barra mostra o acerto na última tentativa de cada questão já vista; a linha vertical marca 65%.'),
+        h('p', { class: 'note' }, 'The bar shows the latest-attempt score for each question seen so far; the vertical line marks 65%.'),
         h('details', { class: 'map breakdown', open: openTopics, ontoggle: e => { openTopics = e.currentTarget.open; } },
-          h('summary', {}, `Desempenho por subtópico (${topicStats.length})`),
-          h('p', { class: 'note' }, 'Do pior para o melhor, pela última tentativa de cada questão. Os nomes são os subtópicos do Topics Outline do guia oficial. Comece a revisão pelos que estão abaixo de 65%.'),
+          h('summary', {}, `Performance by subtopic (${topicStats.length})`),
+          h('p', { class: 'note' }, 'Worst to best, by the latest attempt at each question. The names are the subtopics from the Topics Outline of the official study guide. Start reviewing with the ones below 65%.'),
           h('div', { class: 'dist res-dom' }, topicStats.map(t => statRow(`D${DOM[t.d].n}`, t.topic, t.st)))),
         h('details', { class: 'map breakdown', open: openFormats, ontoggle: e => { openFormats = e.currentTarget.open; } },
-          h('summary', {}, 'Desempenho por formato de questão'),
+          h('summary', {}, 'Performance by question format'),
           h('div', { class: 'dist res-dom' }, fmtStats.map(x => statRow(null, TYPE_INFO[x.t].label({ choose: 'N' }), x.st)))),
         h('div', { class: 'row' }, confirmReset
-          ? [h('button', { type: 'button', class: 'btn', onclick: () => { H = {}; saveHist(); FS = {}; saveFS(); confirmReset = false; renderStart(); } }, 'Confirmar: apagar progresso'),
-             h('button', { type: 'button', class: 'btn', onclick: () => { confirmReset = false; renderStart(); } }, 'Cancelar')]
-          : h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { confirmReset = true; renderStart(); } }, 'Zerar progresso do banco')),
-        h('p', { class: 'note' }, 'Zerar o progresso não apaga o histórico de simulados.'));
+          ? [h('button', { type: 'button', class: 'btn', onclick: () => { H = {}; saveHist(); FS = {}; saveFS(); confirmReset = false; renderStart(); } }, 'Confirm: erase progress'),
+             h('button', { type: 'button', class: 'btn', onclick: () => { confirmReset = false; renderStart(); } }, 'Cancel')]
+          : h('button', { type: 'button', class: 'btn btn-sm', onclick: () => { confirmReset = true; renderStart(); } }, 'Reset question bank progress')),
+        h('p', { class: 'note' }, 'Resetting progress does not delete the practice exam history.'));
     }
 
     /* simulado history */
     const histRows = SL.map(rec => {
       const sum = summarize(rec);
       const when = fmtDate(rec.startedAt || rec.finishedAt);
-      const mode = rec.mode === 'exam' ? 'prova' : 'estudo';
-      const label = rec.recon ? 'Checkpoint · reconstruído' : rec.kind === 'p2' ? 'Prova 2' : rec.kind === 'redo' ? `Refazer erradas · modo ${mode}` : `Simulado · modo ${mode}`;
+      const mode = rec.mode === 'exam' ? 'exam' : 'study';
+      const label = rec.recon ? 'Checkpoint · rebuilt' : rec.kind === 'p2' ? 'Exam 2' : rec.kind === 'redo' ? `Redo wrong answers · ${mode} mode` : `Practice exam · ${mode} mode`;
       const dur = rec.startedAt && rec.finishedAt ? fmtTime(rec.finishedAt - rec.startedAt) : null;
       if (confirmDel === rec.id) {
         return h('div', { class: 'hconfirm' },
-          h('p', {}, h('strong', {}, `Excluir o simulado de ${when}? `), syncState === 'on' ? 'Ele sai deste navegador e da sua conta.' : 'Ele sai do histórico.'),
+          h('p', {}, h('strong', {}, `Delete the practice exam from ${when}? `), syncState === 'on' ? 'It is removed from this browser and from your account.' : 'It is removed from the history.'),
           h('div', { class: 'row' },
-            h('button', { type: 'button', class: 'btn', 'data-fk': 'hdel-yes', onclick: () => deleteRecord(rec.id) }, 'Excluir'),
-            h('button', { type: 'button', class: 'btn', 'data-fk': 'hdel-no', onclick: () => { confirmDel = null; renderStart(); } }, 'Cancelar')));
+            h('button', { type: 'button', class: 'btn', 'data-fk': 'hdel-yes', onclick: () => deleteRecord(rec.id) }, 'Delete'),
+            h('button', { type: 'button', class: 'btn', 'data-fk': 'hdel-no', onclick: () => { confirmDel = null; renderStart(); } }, 'Cancel')));
       }
       return h('div', { class: 'hrow' },
         h('button', { type: 'button', class: 'hmain', 'data-fk': 'h-' + rec.id, onclick: () => openRecord(rec) },
           h('span', { class: 'hdate' }, when),
           h('span', { class: 'hscore ' + (sum.pct >= PASS_PCT ? 'ok' : 'no') }, `${sum.pct}%`),
-          h('span', { class: 'hdesc' }, [label, `${sum.n} questões`, dur].filter(Boolean).join(' · ')),
-          h('span', { class: 'hcount' }, `${sum.pass}/${sum.n} certas`)),
-        h('button', { type: 'button', class: 'btn btn-sm hdel', 'aria-label': `Excluir o simulado de ${when}`, onclick: () => { confirmDel = rec.id; renderStart(); } }, 'Excluir'));
+          h('span', { class: 'hdesc' }, [label, `${sum.n} questions`, dur].filter(Boolean).join(' · ')),
+          h('span', { class: 'hcount' }, `${sum.pass}/${sum.n} correct`)),
+        h('button', { type: 'button', class: 'btn btn-sm hdel', 'aria-label': `Delete the practice exam from ${when}`, onclick: () => { confirmDel = rec.id; renderStart(); } }, 'Delete'));
     });
     const history = h('div', { class: 'block', id: 'hist' },
-      h('h2', {}, SL.length ? `Histórico de simulados (${SL.length})` : 'Histórico de simulados'),
+      h('h2', {}, SL.length ? `Practice exam history (${SL.length})` : 'Practice exam history'),
       h('p', { class: 'note' }, SL.length
-        ? 'Cada simulado finalizado fica guardado com todas as questões e as suas respostas. Abra um para ver o resultado e revisar questão por questão, as certas e as erradas.'
-        : 'Nenhum simulado salvo ainda. Cada simulado que você finalizar fica guardado aqui, com todas as questões e as suas respostas.'),
+        ? 'Every finished practice exam is saved with all its questions and your answers. Open one to see the result and review it question by question, right and wrong.'
+        : 'No practice exams saved yet. Every practice exam you finish is saved here, with all its questions and your answers.'),
       h('p', { class: 'note sync' }, SYNC_NOTE[syncState]),
       SL.length ? h('div', { class: 'hlist' }, histRows) : null);
 
     /* fast panel */
     const fastPanel = h('section', { class: 'panel' },
-      h('span', { class: 'panel-tag' }, 'Prática diária'),
+      h('span', { class: 'panel-tag' }, 'Daily practice'),
       h('h2', {}, 'Fast study'),
-      h('p', { class: 'note' }, 'Uma questão por vez, sorteada do banco inteiro. Clicou, corrigiu: a resposta certa e a explicação aparecem na hora. Uma questão que já apareceu só volta depois que todas as outras do filtro tiverem aparecido. Para rever seus erros, escolha o filtro "Revisar as que errei". O botão "← Anterior" e o histórico da sessão levam de volta a qualquer questão já vista.'),
-      nReserved ? h('p', { class: 'note' }, `As ${nReserved} questões inéditas do checkpoint ficam fora do fast study até você respondê-las no simulado.`) : null,
-      nP2Pending ? h('p', { class: 'note' }, `As ${nP2Pending} questões da Prova 2 que você ainda não respondeu ficam fora do fast study e do simulado sorteado.`) : null,
-      h('label', { class: 'field', for: 'start-fast-domain' }, h('span', { class: 'ord-h' }, 'Filtro'),
+      h('p', { class: 'note' }, 'One question at a time, drawn from the whole bank. Click and it is graded: the right answer and the explanation appear right away. A question that has already appeared only comes back after every other question in the filter has appeared. To revisit your mistakes, choose the "Review the ones I got wrong" filter. The "← Previous" button and the session history take you back to any question you have seen.'),
+      nReserved ? h('p', { class: 'note' }, `The ${nReserved} new checkpoint questions stay out of fast study until you answer them in a practice exam.`) : null,
+      nP2Pending ? h('p', { class: 'note' }, `The ${nP2Pending} Exam 2 questions you haven't answered yet stay out of fast study and the random practice exam.`) : null,
+      h('label', { class: 'field', for: 'start-fast-domain' }, h('span', { class: 'ord-h' }, 'Filter'),
         h('select', { id: 'start-fast-domain', 'data-fk': 'start-fast-domain', onchange: e => { prefs.fastDomain = e.target.value; savePrefs(); } }, domainOptions(prefs.fastDomain))),
       h('div', { class: 'row' },
-        h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'fast-go', onclick: startFast }, F && F.n ? `Continuar sessão (${F.n} respondidas)` : 'Começar fast study'),
-        F && F.n ? h('button', { type: 'button', class: 'btn', onclick: () => { newFast(prefs.fastDomain); view = 'fast'; render(); scrollTop(); } }, 'Nova sessão') : null));
+        h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'fast-go', onclick: startFast }, F && F.n ? `Continue session (${F.n} answered)` : 'Start fast study'),
+        F && F.n ? h('button', { type: 'button', class: 'btn', onclick: () => { newFast(prefs.fastDomain); view = 'fast'; render(); scrollTop(); } }, 'New session') : null));
 
     /* simulado panel */
     let resume = null;
     if (S && !S.finished) {
       const answered = S.ids.filter(id => isComplete(byId[id], S.resp[id])).length;
       resume = h('div', { class: 'resume' },
-        h('h3', {}, S.kind === 'p2' ? 'Prova 2 em andamento' : 'Simulado em andamento'),
-        h('p', { class: 'note' }, `Modo ${S.mode === 'exam' ? 'prova' : 'estudo'} · ${answered} de ${S.ids.length} respondidas` + (S.mode === 'exam' ? ` · ${fmtTime(S.deadline - Date.now())} restantes` : '')),
+        h('h3', {}, S.kind === 'p2' ? 'Exam 2 in progress' : 'Practice exam in progress'),
+        h('p', { class: 'note' }, `${S.mode === 'exam' ? 'Exam' : 'Study'} mode · ${answered} of ${S.ids.length} answered` + (S.mode === 'exam' ? ` · ${fmtTime(S.deadline - Date.now())} left` : '')),
         h('div', { class: 'row' },
-          h('button', { type: 'button', class: 'btn btn-primary', onclick: () => { view = 'quiz'; render(); scrollTop(); } }, 'Continuar de onde parei'),
+          h('button', { type: 'button', class: 'btn btn-primary', onclick: () => { view = 'quiz'; render(); scrollTop(); } }, 'Pick up where I left off'),
           confirmDiscard
-            ? h('button', { type: 'button', class: 'btn', onclick: () => { S = null; store(KEY.sim, null); confirmDiscard = false; renderStart(); } }, 'Confirmar: descartar')
-            : h('button', { type: 'button', class: 'btn', onclick: () => { confirmDiscard = true; renderStart(); } }, 'Descartar')));
+            ? h('button', { type: 'button', class: 'btn', onclick: () => { S = null; store(KEY.sim, null); confirmDiscard = false; renderStart(); } }, 'Confirm: discard')
+            : h('button', { type: 'button', class: 'btn', onclick: () => { confirmDiscard = true; renderStart(); } }, 'Discard')));
     } else if (S && S.finished) {
       const ok = S.ids.filter(id => grade(byId[id], S.resp[id])).length;
       resume = h('div', { class: 'resume' },
-        h('h3', {}, 'Último resultado'),
-        h('p', { class: 'note' }, `${ok} de ${S.ids.length} corretas (${pct(ok, S.ids.length)}%).`),
-        h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', onclick: () => { view = 'results'; render(); scrollTop(); } }, 'Ver resultado e revisão')));
+        h('h3', {}, 'Latest result'),
+        h('p', { class: 'note' }, `${ok} of ${S.ids.length} correct (${pct(ok, S.ids.length)}%).`),
+        h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', onclick: () => { view = 'results'; render(); scrollTop(); } }, 'See results and review')));
     }
     const simPanel = h('section', { class: 'panel' },
-      h('span', { class: 'panel-tag' }, 'Dia da prova'),
-      h('h2', {}, `Simulado de ${simTotal} questões`),
-      h('p', { class: 'note' }, `Sorteia ${simTotal} questões do banco respeitando o peso de cada domínio, com prioridade para as que você ainda não viu. Cada simulado finalizado fica no histórico, logo abaixo.`),
-      nReserved ? h('p', { class: 'reserved', html: `<strong>${nReserved} questões inéditas reservadas para o checkpoint.</strong> O próximo simulado sorteado usa estas antes de qualquer outra.` +
-        (prefs.mode === 'exam' ? 'O modo Prova já está selecionado.' : 'Para valer como checkpoint, escolha o modo Prova abaixo.') }) : null,
+      h('span', { class: 'panel-tag' }, 'Exam day'),
+      h('h2', {}, `${simTotal}-question practice exam`),
+      h('p', { class: 'note' }, `Draws ${simTotal} questions from the bank following the weight of each domain, prioritizing the ones you haven't seen yet. Every finished practice exam goes into the history below.`),
+      nReserved ? h('p', { class: 'reserved', html: `<strong>${nReserved} new questions reserved for the checkpoint.</strong> The next random practice exam uses these before any other.` +
+        (prefs.mode === 'exam' ? ' Exam mode is already selected.' : ' To count as the checkpoint, choose Exam mode below.') }) : null,
       resume,
-      radioGroup('mode', 'Modo', [
-        { v: 'study', t: 'Estudo', d: 'Correção e explicação a cada resposta.' },
-        { v: 'exam', t: 'Prova', d: 'Cronômetro de 2 horas; correção só no final.' }
+      radioGroup('mode', 'Mode', [
+        { v: 'study', t: 'Study', d: 'Grading and explanation after each answer.' },
+        { v: 'exam', t: 'Exam', d: '2-hour timer; grading only at the end.' }
       ], prefs.mode, v => setPref('mode', v)),
-      radioGroup('order', 'Ordem das questões', [
-        { v: 'mixed', t: 'Misturada', d: 'Domínios embaralhados, como na prova real.' },
-        { v: 'domain', t: 'Por domínio', d: 'Do domínio mais cobrado para o menos cobrado.' }
+      radioGroup('order', 'Question order', [
+        { v: 'mixed', t: 'Mixed', d: 'Domains shuffled, as in the real exam.' },
+        { v: 'domain', t: 'By domain', d: 'From the most to the least heavily weighted domain.' }
       ], prefs.order, v => setPref('order', v)),
       h('div', { class: 'row' },
-        h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'sim-go', onclick: () => { newSession(prefs.mode, prefs.order); view = 'quiz'; render(); scrollTop(); } }, S && !S.finished ? 'Sortear um novo simulado' : 'Sortear simulado')));
+        h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'sim-go', onclick: () => { newSession(prefs.mode, prefs.order); view = 'quiz'; render(); scrollTop(); } }, S && !S.finished ? 'Draw a new practice exam' : 'Draw a practice exam')));
 
     /* Prova 2: fixed exam calibrated to the real one */
     let p2Panel = null;
@@ -1002,46 +1002,47 @@
       const busy = S && !S.finished;
       const startP2 = () => { confirmP2 = false; newSession('exam', 'mixed', P2, 'p2'); view = 'quiz'; render(); scrollTop(); };
       p2Panel = h('section', { class: 'panel panel-wide' },
-        h('span', { class: 'panel-tag' }, 'Mais difícil que a prova real'),
-        h('h2', {}, 'Prova 2'),
-        h('p', { class: 'note' }, `${P2.length} questões fixas e inéditas, em modo prova com cronômetro de 2 horas. Os distratores são plausíveis, a maioria das questões traz YAML, SQL, comando ou log, e o domínio e o subtópico só aparecem na revisão. É mais difícil que a prova oficial de propósito: passar de 65% aqui é um bom sinal.` + (PUB ? ' Faça depois de estudar com o banco, porque essas questões ficam fora do fast study e do simulado sorteado.' : '')),
-        last ? h('p', { class: 'reserved' }, h('strong', {}, `Última tentativa: ${lastSum.pct}% `), `(${lastSum.pass}/${lastSum.n}) em ${fmtDate(last.startedAt || last.finishedAt)}. Refazer mede fixação, não desempenho em questões novas.`) : null,
+        h('span', { class: 'panel-tag' }, 'Harder than the real exam'),
+        h('h2', {}, 'Exam 2'),
+        h('p', { class: 'note' }, `${P2.length} fixed, unseen questions in exam mode with a 2-hour timer. The distractors are plausible, most questions include YAML, SQL, a command or a log, and the domain and subtopic only appear in the review. It is harder than the official exam on purpose: scoring above 65% here is a good sign.` + (PUB ? ' Take it after studying with the bank, because these questions stay out of fast study and the random practice exam.' : '')),
+        last ? h('p', { class: 'reserved' }, h('strong', {}, `Latest attempt: ${lastSum.pct}% `), `(${lastSum.pass}/${lastSum.n}) on ${fmtDate(last.startedAt || last.finishedAt)}. A retake measures retention, not performance on new questions.`) : null,
         h('div', { class: 'row' }, confirmP2
-          ? [h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'p2-yes', onclick: startP2 }, 'Confirmar: descartar o simulado em andamento'),
-             h('button', { type: 'button', class: 'btn', 'data-fk': 'p2-no', onclick: () => { confirmP2 = false; renderStart(); } }, 'Cancelar')]
-          : h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'p2-go', onclick: () => { if (busy) { confirmP2 = true; renderStart(); } else startP2(); } }, last ? 'Refazer a Prova 2' : 'Começar a Prova 2')));
+          ? [h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'p2-yes', onclick: startP2 }, 'Confirm: discard the practice exam in progress'),
+             h('button', { type: 'button', class: 'btn', 'data-fk': 'p2-no', onclick: () => { confirmP2 = false; renderStart(); } }, 'Cancel')]
+          : h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'p2-go', onclick: () => { if (busy) { confirmP2 = true; renderStart(); } else startP2(); } }, last ? 'Retake Exam 2' : 'Start Exam 2')));
     }
 
     setChildren(root,
       h('div', { class: 'hero' },
-        h('p', { class: 'eyebrow' }, (PUB ? 'Não oficial · ' : '') + 'dbt Analytics Engineering Certification · dbt Core 1.11'),
-        h('h1', {}, 'Simulado dbt Analytics Engineering'),
-        h('p', { class: 'lede' }, `Banco com ${Q.length} questões no formato da prova, distribuídas pelo peso de cada domínio do guia oficial. Os enunciados estão em inglês, como na prova; as explicações estão em português, com link para a documentação.`),
+        PUB ? h('p', { class: 'lang-switch' }, h('a', { href: 'pt/index.html', hreflang: 'pt-BR', lang: 'pt-BR' }, 'Versão em português →')) : null,
+        h('p', { class: 'eyebrow' }, (PUB ? 'Unofficial · ' : '') + 'dbt Analytics Engineering Certification · dbt Core 1.11'),
+        h('h1', {}, 'dbt Analytics Engineering Practice Exam'),
+        h('p', { class: 'lede' }, `A bank of ${Q.length} questions in the exam format, distributed by the weight of each domain in the official study guide. Every explanation links to the documentation.`),
         h('div', { class: 'facts' },
-          h('span', { class: 'fact' }, h('b', {}, String(Q.length)), ' questões no banco'),
-          h('span', { class: 'fact' }, h('b', {}, '65'), ' na prova, em 2 h'),
-          h('span', { class: 'fact' }, h('b', {}, '65%'), ' para passar'),
-          h('span', { class: 'fact' }, h('b', {}, '7'), ' formatos'))),
+          h('span', { class: 'fact' }, h('b', {}, String(Q.length)), ' questions in the bank'),
+          h('span', { class: 'fact' }, h('b', {}, '65'), ' on the exam, in 2 h'),
+          h('span', { class: 'fact' }, h('b', {}, '65%'), ' to pass'),
+          h('span', { class: 'fact' }, h('b', {}, '7'), ' formats'))),
       h('div', { class: 'modes' }, fastPanel, simPanel, p2Panel),
       history,
       progress,
       h('div', { class: 'block' },
-        h('h2', {}, 'Distribuição por domínio'),
-        h('p', { class: 'note' }, 'O guia oficial não publica percentuais por domínio. A quantidade de questões segue o número de subtópicos de cada domínio no Topics Outline, com reforço em Testes, que aparecem em 3 das 10 questões de exemplo.'),
+        h('h2', {}, 'Distribution by domain'),
+        h('p', { class: 'note' }, 'The official guide publishes no percentages per domain. The number of questions follows the number of subtopics in each domain in the Topics Outline, with extra weight on Tests, which appear in 3 of the 10 sample questions.'),
         h('div', { class: 'dist' }, dist.map(d => h('div', { class: 'drow' },
-          h('div', { class: 'dname' }, h('span', { class: 'dnum' }, `D${d.n}`), h('span', {}, d.pt), h('span', { class: 'den' }, d.en)),
-          h('div', { class: 'dval' }, `${bankCount(d)} no banco · ${SIM_QUOTA[d.id]} no simulado · ${pct(bankCount(d), Q.length)}%`),
+          h('div', { class: 'dname' }, h('span', { class: 'dnum' }, `D${d.n}`), h('span', {}, d.en)),
+          h('div', { class: 'dval' }, `${bankCount(d)} in the bank · ${SIM_QUOTA[d.id]} per practice exam · ${pct(bankCount(d), Q.length)}%`),
           h('div', { class: 'dbar' }, h('i', { style: `width:${bankCount(d) / maxBank * 100}%` })))))),
       h('div', { class: 'block' },
-        h('h2', {}, 'Formatos de questão'),
+        h('h2', {}, 'Question formats'),
         h('div', { class: 'formats' }, fmtOrder.filter(t => fmtCounts[t]).map(t => h('div', { class: 'fmt' },
           h('div', { class: 'fmt-h' }, h('span', {}, TYPE_INFO[t].label({ choose: 'N' })), h('span', {}, String(fmtCounts[t]))),
-          h('p', {}, TYPE_INFO[t].pt))))),
+          h('p', {}, TYPE_INFO[t].desc))))),
       PUB ? h('div', { class: 'block' },
-        h('h2', {}, 'Sobre este simulado'),
-        h('p', { class: 'note' }, 'Projeto independente e gratuito, sem vínculo com a dbt Labs. As questões são autorais, criadas com apoio de IA (Claude) a partir do guia de estudo oficial e da documentação do dbt Core 1.11. Nenhuma reproduz questões da prova.'),
-        h('p', { class: 'note' }, 'Pode haver erros. Cada explicação traz o link da documentação: em caso de dúvida, vale o que a documentação diz.'),
-        h('p', { class: 'note' }, 'Seu progresso e o histórico de simulados ficam salvos só neste navegador. Nada é enviado para servidor nenhum.')) : null);
+        h('h2', {}, 'About this practice exam'),
+        h('p', { class: 'note' }, 'An independent, free project, not affiliated with dbt Labs. The questions are original, written with AI assistance (Claude) from the official study guide and the dbt Core 1.11 documentation. None of them reproduces exam questions.'),
+        h('p', { class: 'note' }, 'There may be mistakes. Every explanation links to the documentation: when in doubt, the documentation wins.'),
+        h('p', { class: 'note' }, 'Your progress and practice exam history are saved only in this browser. Nothing is sent to any server.')) : null);
     restoreFocus(root, key);
   }
 
@@ -1066,48 +1067,48 @@
       if (el) el.scrollIntoView({ block: 'start' }); else scrollTop();
     };
     const filters = [
-      { k: 'all', t: 'Todas', c: n },
-      { k: 'F', t: sum.fail === 1 ? 'Errada' : 'Erradas', c: sum.fail },
-      { k: 'P', t: sum.pass === 1 ? 'Certa' : 'Certas', c: sum.pass },
-      sum.skip ? { k: 'S', t: 'Em branco', c: sum.skip } : null,
-      sum.unknown ? { k: 'U', t: 'Sem registro', c: sum.unknown } : null
+      { k: 'all', t: 'All', c: n },
+      { k: 'F', t: sum.fail === 1 ? 'Wrong' : 'Wrong', c: sum.fail },
+      { k: 'P', t: sum.pass === 1 ? 'Right' : 'Right', c: sum.pass },
+      sum.skip ? { k: 'S', t: 'Blank', c: sum.skip } : null,
+      sum.unknown ? { k: 'U', t: 'No record', c: sum.unknown } : null
     ].filter(Boolean);
     if (!filters.some(f => f.k === resFilter)) resFilter = 'all';
     const shown = X.ids.map((id, i) => ({ id, i })).filter(x => resFilter === 'all' || st[x.id] === resFilter);
-    const mark = { P: '✓', F: '✗', S: '–', U: '?' }, markLabel = { P: 'correta', F: 'incorreta', S: 'em branco', U: 'sem registro' };
-    const kindLabel = X.recon ? 'checkpoint reconstruído' : X.kind === 'p2' ? 'prova 2' : X.kind === 'redo' ? 'refazer erradas' : null;
+    const mark = { P: '✓', F: '✗', S: '–', U: '?' }, markLabel = { P: 'correct', F: 'incorrect', S: 'blank', U: 'no record' };
+    const kindLabel = X.recon ? 'rebuilt checkpoint' : X.kind === 'p2' ? 'exam 2' : X.kind === 'redo' ? 'redo wrong answers' : null;
 
     setChildren(root,
       h('div', { class: 'res-head' },
-        h('p', { class: 'eyebrow' }, [past ? 'Histórico' : 'Resultado', fmtDate(X.startedAt || X.finishedAt), kindLabel, `modo ${X.mode === 'exam' ? 'prova' : 'estudo'}`, elapsed].filter(Boolean).join(' · ')),
-        h('h1', {}, ok ? 'Acima da nota de corte' : 'Abaixo da nota de corte'),
-        h('div', { class: 'res-score' }, h('span', { class: 'res-pct' }, `${sum.pct}%`), h('span', { class: 'verdict ' + (ok ? 'ok' : 'no') }, ok ? `Aprovado (mínimo ${PASS_PCT}%)` : `Reprovado (mínimo ${PASS_PCT}%)`)),
+        h('p', { class: 'eyebrow' }, [past ? 'History' : 'Result', fmtDate(X.startedAt || X.finishedAt), kindLabel, `${X.mode === 'exam' ? 'exam' : 'study'} mode`, elapsed].filter(Boolean).join(' · ')),
+        h('h1', {}, ok ? 'Above the passing score' : 'Below the passing score'),
+        h('div', { class: 'res-score' }, h('span', { class: 'res-pct' }, `${sum.pct}%`), h('span', { class: 'verdict ' + (ok ? 'ok' : 'no') }, ok ? `Pass (minimum ${PASS_PCT}%)` : `Fail (minimum ${PASS_PCT}%)`)),
         h('div', { class: 'logline', style: 'border-radius:8px' }, 'Done. ', h('span', { class: 't-pass' }, `PASS=${sum.pass}`), ' ', h('span', { class: 't-fail' }, `FAIL=${sum.fail}`), ' ', h('span', { class: 't-muted' }, `SKIP=${sum.skip}`),
           sum.unknown ? h('span', { class: 't-muted' }, ` NO_RECORD=${sum.unknown}`) : null, ` TOTAL=${n}`),
-        X.recon ? h('p', { class: 'reserved' }, h('strong', {}, 'Simulado reconstruído. '),
-          'Ele foi feito antes de o histórico existir. O app recuperou quais questões você acertou e errou a partir do seu progresso no banco, mas não as alternativas que você marcou nem o tempo de prova.') : null,
+        X.recon ? h('p', { class: 'reserved' }, h('strong', {}, 'Rebuilt practice exam. '),
+          'It was taken before the history existed. The app recovered which questions you got right and wrong from your progress in the bank, but not the options you picked or the exam time.') : null,
         h('div', { class: 'row' },
-          h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'res-review', onclick: () => openReview(0) }, 'Revisar questão por questão'),
-          wrongIds.length && !busy ? h('button', { type: 'button', class: 'btn', onclick: redo }, `Refazer as ${wrongIds.length} que errei`) : null,
-          h('button', { type: 'button', class: 'btn', onclick: back }, past ? 'Voltar ao histórico' : 'Voltar ao início')),
-        wrongIds.length && busy ? h('p', { class: 'note' }, 'Para refazer as erradas deste simulado, finalize ou descarte antes o simulado em andamento.') : null),
+          h('button', { type: 'button', class: 'btn btn-primary', 'data-fk': 'res-review', onclick: () => openReview(0) }, 'Review question by question'),
+          wrongIds.length && !busy ? h('button', { type: 'button', class: 'btn', onclick: redo }, `Redo the ${wrongIds.length} I got wrong`) : null,
+          h('button', { type: 'button', class: 'btn', onclick: back }, past ? 'Back to history' : 'Back to start')),
+        wrongIds.length && busy ? h('p', { class: 'note' }, 'To redo the wrong answers from this practice exam, first finish or discard the practice exam in progress.') : null),
       h('div', { class: 'block res-dom' },
-        h('h2', {}, 'Desempenho por domínio'),
-        h('p', { class: 'note' }, 'A linha vertical marca 65%.'),
+        h('h2', {}, 'Performance by domain'),
+        h('p', { class: 'note' }, 'The vertical line marks 65%.'),
         h('div', { class: 'dist' }, doms.map(d => h('div', { class: 'drow' },
-          h('div', { class: 'dname' }, h('span', { class: 'dnum' }, `D${d.n}`), h('span', {}, d.pt)),
+          h('div', { class: 'dname' }, h('span', { class: 'dnum' }, `D${d.n}`), h('span', {}, d.en)),
           h('div', { class: 'dval' }, `${d.c}/${d.t} · ${d.pct}%`),
           h('div', { class: 'dbar' }, h('i', { class: d.pct >= PASS_PCT ? 'ok' : 'no', style: `width:${Math.max(d.pct, 2)}%` })))))),
       weak.length ? h('div', { class: 'block' },
-        h('h2', {}, 'Onde focar o estudo'),
-        h('p', { class: 'note' }, 'Domínios abaixo de 65%, ordenados pelo impacto na nota (peso do domínio × distância até a meta). No fast study, filtre por um desses domínios para praticar.'),
-        h('ol', { class: 'focus-list' }, weak.map(d => h('li', {}, h('strong', {}, `D${d.n} · ${d.pt}`), ` (${d.pct}%, ${d.t} questões no simulado)`)))) : null,
+        h('h2', {}, 'Where to focus'),
+        h('p', { class: 'note' }, 'Domains below 65%, sorted by impact on the score (domain weight × distance to the target). In fast study, filter by one of these domains to practice.'),
+        h('ol', { class: 'focus-list' }, weak.map(d => h('li', {}, h('strong', {}, `D${d.n} · ${d.en}`), ` (${d.pct}%, ${d.t} questions in the practice exam)`)))) : null,
       h('div', { class: 'block' },
-        h('h2', {}, `Todas as questões (${n})`),
+        h('h2', {}, `All questions (${n})`),
         h('p', { class: 'note' }, X.recon
-          ? 'Toque numa questão para ver o enunciado completo, a resposta correta e a explicação.'
-          : 'Toque numa questão para ver o enunciado completo, a sua resposta, a correta e a explicação.'),
-        h('div', { class: 'qfilter', role: 'group', 'aria-label': 'Filtrar questões' }, filters.map(f => h('button', {
+          ? 'Tap a question to see the full stem, the correct answer and the explanation.'
+          : 'Tap a question to see the full stem, your answer, the correct one and the explanation.'),
+        h('div', { class: 'qfilter', role: 'group', 'aria-label': 'Filter questions' }, filters.map(f => h('button', {
             type: 'button', class: 'fact fact-btn' + (resFilter === f.k ? ' is-on' : ''), 'aria-pressed': String(resFilter === f.k), 'data-fk': 'qf-' + f.k,
             disabled: !f.c && resFilter !== f.k, onclick: () => { resFilter = f.k; renderResults(); } },
           h('b', {}, String(f.c)), ' ' + f.t))),

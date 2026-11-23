@@ -1,16 +1,16 @@
-/* Checkpoint set (65): one full simulado of new questions, weighted toward the weakest subtopics
-   and the fill-in-the-blank and hotspot formats. set: 'cp1' keeps them out of fast study until answered. */
+/* Extra set across all domains (set: cp1). */
 window.DBT_Q.push(
-
-/* ── D1 · Developing and optimizing dbt models (26) ── */
 {
   id: 'cp-d1-cmd-exclude', d: 'd1', type: 'fill', set: 'cp1',
   topic: 'Using commands such as build, run, test, docs, show, snapshot, and seed',
   stem: `Complete the command so it builds every model in ~models/marts~ except the ones tagged ~deprecated~: ~dbt build --select models/marts ______ tag:deprecated~`,
-  accept: ['--exclude', 'exclude'],
+  accept: [
+    `--exclude`,
+    `exclude`
+  ],
   exp: [
-    `~--exclude~ remove nós do que foi escolhido com ~--select~. Funciona em ~build~, ~run~, ~test~, ~seed~, ~snapshot~, ~ls~ e nos outros comandos que selecionam nós.`,
-    `Aqui, ~--select models/marts~ pega tudo o que está nessa pasta (o método ~path~ fica implícito), e ~--exclude tag:deprecated~ tira os modelos com essa tag.`
+    `~--exclude~ removes nodes from what was chosen with ~--select~. It works with ~build~, ~run~, ~test~, ~seed~, ~snapshot~, ~ls~ and the other commands that select nodes.`,
+    `Here, ~--select models/marts~ selects everything in that folder (the ~path~ method is implied), and ~--exclude tag:deprecated~ removes the models with that tag.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/syntax'
 },
@@ -26,8 +26,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `No ~--select~, critérios separados por **espaço** formam uma **união**: entram os nós que têm qualquer uma das tags. Separados por **vírgula**, formam uma **interseção**: só entram os nós que atendem a todos. Por isso ~"tag:finance,tag:nightly"~ pega só os modelos com as duas tags.`,
-    `Tags não passam para os filhos pelo DAG, e ~dbt build~ aceita qualquer seletor, inclusive ~tag:~.`
+    `In ~--select~, criteria separated by a **space** form a **union**: nodes with any of the tags are included. Separated by a **comma**, they form an **intersection**: only nodes that match all of them are included. That is why ~"tag:finance,tag:nightly"~ selects only the models with both tags.`,
+    `Tags don't pass down to children through the DAG, and ~dbt build~ accepts any selector, including ~tag:~.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/set-operators'
 },
@@ -43,8 +43,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Com ~cautious~, o dbt só roda os testes que dependem **exclusivamente** de nós selecionados. O ~relationships~ também depende de ~fct_orders~, que não foi selecionado, então fica de fora.`,
-    `No modo padrão, ~eager~, basta um dos pais estar selecionado, e os três testes rodariam. Os outros modos são ~buildable~ e ~empty~.`
+    `With ~cautious~, dbt only runs tests that depend **exclusively** on selected nodes. The ~relationships~ test also depends on ~fct_orders~, which wasn't selected, so it is left out.`,
+    `In the default mode, ~eager~, one selected parent is enough, and all three tests would run. The other modes are ~buildable~ and ~empty~.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/test-selection-examples'
 },
@@ -60,20 +60,27 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Seletores YAML ficam no ~selectors.yml~, na raiz do projeto, e são usados com ~--selector <nome>~. Eles aceitam ~union~, ~intersection~ e ~exclude~, então seleções complexas ficam versionadas junto com o código.`,
-    `Os argumentos da linha de comando não passam pelo Jinja, ~run-operation~ executa macros (não seleciona nós para um build) e o ~profiles.yml~ guarda conexões, não seleções.`
+    `YAML selectors live in ~selectors.yml~, at the project root, and are used with ~--selector <name>~. They support ~union~, ~intersection~ and ~exclude~, so complex selections are versioned along with the code.`,
+    `Command-line arguments don't go through Jinja, ~run-operation~ runs macros (it doesn't select nodes for a build) and ~profiles.yml~ holds connections, not selections.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/yaml-selectors'
 },
 {
-  id: 'cp-d1-cmd-objects', d: 'd1', type: 'multi', choose: 2, set: 'cp1',
+  id: 'cp-d1-cmd-objects', d: 'd1', type: 'multi', set: 'cp1',
+  choose: 2,
   topic: 'Using commands such as build, run, test, docs, show, snapshot, and seed',
   stem: `Which two commands create or update objects in the warehouse? (Choose two.)`,
-  options: [`~dbt seed~`, `~dbt snapshot~`, `~dbt compile~`, `~dbt show~`, `~dbt ls~`],
+  options: [
+    `~dbt seed~`,
+    `~dbt snapshot~`,
+    `~dbt compile~`,
+    `~dbt show~`,
+    `~dbt ls~`
+  ],
   answers: [0, 1],
   exp: [
-    `~dbt seed~ carrega os CSVs em tabelas, e ~dbt snapshot~ cria ou atualiza as tabelas de snapshot.`,
-    `~dbt compile~ só gera o SQL em ~target/compiled~. ~dbt show~ executa uma consulta e mostra uma prévia, sem criar nada. ~dbt ls~ apenas lista os recursos do projeto.`
+    `~dbt seed~ loads the CSVs into tables, and ~dbt snapshot~ creates or updates the snapshot tables.`,
+    `~dbt compile~ only generates the SQL in ~target/compiled~. ~dbt show~ runs a query and shows a preview, creating nothing. ~dbt ls~ only lists the project's resources.`
   ],
   doc: 'https://docs.getdbt.com/reference/dbt-commands'
 },
@@ -81,7 +88,12 @@ window.DBT_Q.push(
   id: 'cp-d1-src-hotspot', d: 'd1', type: 'hotspot', set: 'cp1',
   topic: 'Identifying and verifying any raw object dependencies',
   stem: `In the lineage graph, ~int_customers_enriched~ shows only ~stg_shop__customers~ as a parent, but the model also reads a raw table. Click the line that creates a dependency dbt can't see.`,
-  code: [{ lang: 'sql', label: 'models/intermediate/int_customers_enriched.sql', hotspot: true, text: `
+  code: [
+    {
+      lang: 'sql',
+      label: 'models/intermediate/int_customers_enriched.sql',
+      hotspot: true,
+      text: `
     with customers as (
         select * from {{ ref('stg_shop__customers') }}
     ),
@@ -96,11 +108,13 @@ window.DBT_Q.push(
         from customers
         left join regions using (region_id)
     )
-    select * from final` }],
+    select * from final`
+    }
+  ],
   answer: 4,
   exp: [
-    `~raw.shop.regions~ está escrito direto no SQL, então o dbt não sabe que o modelo depende dessa tabela: ela não aparece na linhagem nem na documentação, não pode ter testes nem freshness, e seletores como ~source:shop+~ não alcançam o modelo.`,
-    `A correção é declarar ~regions~ na source ~shop~, criar um staging (~stg_shop__regions~) com ~{{ source('shop', 'regions') }}~ e trocar a linha por ~{{ ref('stg_shop__regions') }}~.`
+    `~raw.shop.regions~ is written directly in the SQL, so dbt doesn't know the model depends on that table: it doesn't appear in the lineage or the documentation, can't have tests or freshness, and selectors such as ~source:shop+~ don't reach the model.`,
+    `The fix is to declare ~regions~ in the ~shop~ source, create a staging model (~stg_shop__regions~) with ~{{ source('shop', 'regions') }}~ and replace the line with ~{{ ref('stg_shop__regions') }}~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/sources'
 },
@@ -116,8 +130,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `No Snowflake, nomes sem aspas viram maiúsculas. Uma tabela criada com aspas e letras misturadas só é encontrada se o nome for citado exatamente assim. ~quoting: {identifier: true}~ faz o dbt gerar ~"OrderItems"~ entre aspas. A mesma propriedade existe para ~database~ e ~schema~.`,
-    `Mudar o nome para minúsculas ou maiúsculas continua gerando um nome sem aspas, que o Snowflake converte para ~ORDERITEMS~. Sources não têm materialização.`
+    `On Snowflake, unquoted names become uppercase. A table created with quotes and mixed case is only found if the name is quoted exactly that way. ~quoting: {identifier: true}~ makes dbt generate ~"OrderItems"~ in quotes. The same property exists for ~database~ and ~schema~.`,
+    `Changing the name to lowercase or uppercase still produces an unquoted name, which Snowflake converts to ~ORDERITEMS~. Sources have no materialization.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/quoting'
 },
@@ -133,8 +147,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O número depois do ~+~ limita a profundidade: ~+1~ pega só os filhos diretos. Sem número, ~source:stripe.payments+~ lista todos os descendentes.`,
-    `Com o ~+~ antes do nome, o seletor pega os **pais**, e uma source não tem pais no DAG.`
+    `The number after the ~+~ limits the depth: ~+1~ selects only the direct children. Without a number, ~source:stripe.payments+~ lists all descendants.`,
+    `With the ~+~ before the name, the selector picks the **parents**, and a source has no parents in the DAG.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/graph-operators'
 },
@@ -142,10 +156,12 @@ window.DBT_Q.push(
   id: 'cp-d1-mb-hour', d: 'd1', type: 'fill', set: 'cp1',
   topic: 'Understanding advanced dbt materializations such as microbatch',
   stem: `Complete the config so each batch of this microbatch model covers one hour of events: ~{{ config(materialized='incremental', incremental_strategy='microbatch', event_time='event_at', begin='2024-01-01', batch_size='______') }}~`,
-  accept: ['hour'],
+  accept: [
+    `hour`
+  ],
   exp: [
-    `~batch_size~ aceita ~hour~, ~day~, ~month~ e ~year~. Cada batch processa uma janela desse tamanho, definida pelo ~event_time~.`,
-    `Junto com ~event_time~ e ~begin~, ~batch_size~ é uma das configs obrigatórias de um modelo microbatch.`
+    `~batch_size~ accepts ~hour~, ~day~, ~month~ and ~year~. Each batch processes a window of that size, defined by ~event_time~.`,
+    `Together with ~event_time~ and ~begin~, ~batch_size~ is one of the required configs of a microbatch model.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-microbatch'
 },
@@ -161,8 +177,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Num modelo microbatch, o dbt filtra cada ~ref()~ e ~source()~ que tenha ~event_time~ para a janela do batch. ~.render()~ desliga esse filtro só naquele ~ref~.`,
-    `O ~event_time~ do próprio modelo é obrigatório no microbatch. ~lookback~ define quantos batches anteriores são reprocessados, não o filtro dos inputs.`
+    `In a microbatch model, dbt filters each ~ref()~ and ~source()~ that has ~event_time~ to the batch window. ~.render()~ turns off that filter for that ~ref~ only.`,
+    `The model's own ~event_time~ is required for microbatch. ~lookback~ sets how many previous batches are reprocessed, not the input filter.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-microbatch'
 },
@@ -178,8 +194,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~concurrent_batches~ substitui a detecção automática do dbt: com ~false~, os batches rodam um depois do outro; com ~true~, rodam em paralelo.`,
-    `~batch_size~ só aceita ~hour~, ~day~, ~month~ e ~year~, ~lookback~ controla quantos batches anteriores são reprocessados, e ~full_refresh=false~ só impede que ~--full-refresh~ reconstrua o modelo.`
+    `~concurrent_batches~ overrides dbt's automatic detection: with ~false~, batches run one after another; with ~true~, they run in parallel.`,
+    `~batch_size~ only accepts ~hour~, ~day~, ~month~ and ~year~, ~lookback~ controls how many previous batches are reprocessed, and ~full_refresh=false~ only prevents ~--full-refresh~ from rebuilding the model.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/parallel-batch-execution'
 },
@@ -195,8 +211,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~adapter.dispatch~ escolhe a implementação pelo adapter em uso: procura ~<adapter>__nome~ (como ~bigquery__date_diff_days~) e usa ~default__nome~ quando não há uma específica. Os modelos chamam uma macro só, e a diferença fica num lugar.`,
-    `Um ~if~ em cada modelo repete lógica, o contrário de DRY. Além disso, ~target.name~ é o nome do target; o tipo do warehouse fica em ~target.type~.`
+    `~adapter.dispatch~ picks the implementation for the adapter in use: it looks for ~<adapter>__name~ (such as ~bigquery__date_diff_days~) and falls back to ~default__name~ when there is no specific one. Models call a single macro, and the difference lives in one place.`,
+    `An ~if~ in every model repeats logic, the opposite of DRY. Also, ~target.name~ is the target's name; the warehouse type is in ~target.type~.`
   ],
   doc: 'https://docs.getdbt.com/reference/dbt-jinja-functions/dispatch'
 },
@@ -212,8 +228,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Quando a lógica repetida produz um **conjunto de dados**, o lugar dela é um modelo: ele é calculado uma vez, aparece no DAG, pode ser testado e documentado, e os marts só fazem ~ref()~.`,
-    `Macros servem para trechos de SQL reutilizáveis com parâmetros, como conversões. Com uma macro, o join rodaria três vezes e ficaria invisível no DAG. E staging deve ser 1 para 1 com a source, sem joins.`
+    `When the repeated logic produces a **dataset**, it belongs in a model: it is computed once, appears in the DAG, can be tested and documented, and the marts just use ~ref()~.`,
+    `Macros are for reusable, parameterized SQL snippets, such as conversions. With a macro, the join would run three times and be invisible in the DAG. And staging should be 1:1 with the source, with no joins.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/how-we-structure/3-intermediate'
 },
@@ -229,8 +245,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Uma view recalcula a consulta toda vez que alguém a lê. Como os dados só mudam uma vez por dia, uma ~table~ faz o trabalho pesado uma vez no build e deixa as leituras rápidas.`,
-    `Modelos ephemeral não existem no warehouse, então o dashboard nem conseguiria lê-los. Threads aceleram o build, não as consultas do dashboard. E ~append~ sem chave pode duplicar linhas; um incremental só compensaria se a tabela ficasse cara demais para reconstruir.`
+    `A view recomputes the query every time someone reads it. Since the data only changes once a day, a ~table~ does the heavy work once at build time and keeps reads fast.`,
+    `Ephemeral models don't exist in the warehouse, so the dashboard couldn't even read them. Threads speed up the build, not the dashboard's queries. And ~append~ without a key can duplicate rows; incremental would only pay off if the table became too expensive to rebuild.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/materializations'
 },
@@ -238,10 +254,12 @@ window.DBT_Q.push(
   id: 'cp-d1-mat-ephemeral', d: 'd1', type: 'fill', set: 'cp1',
   topic: 'Understanding core dbt materializations',
   stem: `Complete the blank. A model with ~materialized='______'~ is never created in the warehouse: dbt inserts its SQL as a CTE into every model that refs it.`,
-  accept: ['ephemeral'],
+  accept: [
+    `ephemeral`
+  ],
   exp: [
-    `Modelos ~ephemeral~ não viram tabela nem view: o dbt injeta o SQL deles como CTE em cada modelo que faz ~ref()~. Servem para lógica leve, usada por poucos modelos.`,
-    `Como não existem no warehouse, não dá para consultá-los diretamente, e usá-los em muitos modelos repete o mesmo cálculo em cada um.`
+    `~ephemeral~ models don't become a table or a view: dbt injects their SQL as a CTE into each model that calls ~ref()~ on them. They are meant for light logic used by a few models.`,
+    `Since they don't exist in the warehouse, you can't query them directly, and using them in many models repeats the same computation in each one.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/materializations'
 },
@@ -249,7 +267,12 @@ window.DBT_Q.push(
   id: 'cp-d1-snap-hotspot', d: 'd1', type: 'hotspot', set: 'cp1',
   topic: 'Creating snapshots in YAML',
   stem: `The ~orders~ table is fully reloaded every night, which refreshes ~_loaded_at~ on every row. Its ~updated_at~ column only changes when an order really changes. The snapshot below records a new version of **every** order on every run. Click the line that causes it.`,
-  code: [{ lang: 'yaml', label: 'snapshots/orders_snapshot.yml', hotspot: true, text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'snapshots/orders_snapshot.yml',
+      hotspot: true,
+      text: `
     snapshots:
       - name: orders_snapshot
         relation: source('shop', 'orders')
@@ -257,11 +280,13 @@ window.DBT_Q.push(
           schema: snapshots
           unique_key: order_id
           strategy: timestamp
-          updated_at: _loaded_at` }],
+          updated_at: _loaded_at`
+    }
+  ],
   answer: 7,
   exp: [
-    `Na estratégia ~timestamp~, o dbt cria uma nova versão sempre que o valor de ~updated_at~ muda. Como ~_loaded_at~ muda em toda carga, todas as linhas parecem alteradas todo dia. O certo é ~updated_at: updated_at~, a coluna que só muda quando o registro muda.`,
-    `~schema~, ~unique_key~ e ~strategy~ estão corretos. Se não houvesse nenhuma coluna confiável, a alternativa seria ~strategy: check~ com ~check_cols~.`
+    `With the ~timestamp~ strategy, dbt creates a new version whenever the ~updated_at~ value changes. Since ~_loaded_at~ changes on every load, every row looks changed every day. The right setting is ~updated_at: updated_at~, the column that only changes when the record changes.`,
+    `~schema~, ~unique_key~ and ~strategy~ are correct. If there were no reliable column at all, the alternative would be ~strategy: check~ with ~check_cols~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/snapshots'
 },
@@ -269,7 +294,11 @@ window.DBT_Q.push(
   id: 'cp-d1-snap-deletes', d: 'd1', type: 'match', set: 'cp1',
   topic: 'Creating snapshots in YAML',
   stem: `Match each ~hard_deletes~ value to what happens in the snapshot table when a row is deleted from the source. One option is not used.`,
-  left: [`~ignore~`, `~invalidate~`, `~new_record~`],
+  left: [
+    `~ignore~`,
+    `~invalidate~`,
+    `~new_record~`
+  ],
   right: [
     `Nothing changes; the deleted row's current version stays open`,
     `The current version is closed by filling its ~dbt_valid_to~`,
@@ -278,10 +307,10 @@ window.DBT_Q.push(
   ],
   answer: [0, 1, 2],
   exp: [
-    `• ~ignore~ (padrão): o dbt não faz nada com registros apagados.`,
-    `• ~invalidate~: fecha a versão atual preenchendo ~dbt_valid_to~, como o antigo ~invalidate_hard_deletes=true~.`,
-    `• ~new_record~: insere uma nova linha com ~dbt_is_deleted~ = True, mantendo o histórico completo.`,
-    `Snapshots não apagam linhas da própria tabela.`
+    `• ~ignore~ (default): dbt does nothing with deleted records.`,
+    `• ~invalidate~: closes the current version by filling ~dbt_valid_to~, like the old ~invalidate_hard_deletes=true~.`,
+    `• ~new_record~: inserts a new row with ~dbt_is_deleted~ = True, keeping the full history.`,
+    `Snapshots don't delete rows from their own table.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/snapshots'
 },
@@ -297,14 +326,14 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Com ~--empty~, o dbt reescreve cada ~ref()~ e ~source()~ para devolver zero linhas, o que valida SQL, dependências e schema sem processar dados. Uma tabela escrita direto no SQL não passa por essa reescrita e é lida inteira.`,
-    `É mais um motivo para declarar toda tabela bruta como source. ~--empty~ funciona tanto em ~dbt run~ quanto em ~dbt build~.`
+    `With ~--empty~, dbt rewrites each ~ref()~ and ~source()~ to return zero rows, which validates SQL, dependencies and schema without processing data. A table written directly in the SQL doesn't go through this rewrite and is read in full.`,
+    `That is one more reason to declare every raw table as a source. ~--empty~ works with both ~dbt run~ and ~dbt build~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/empty-flag'
 },
 {
   id: 'cp-d1-inc-nokey', d: 'd1', type: 'mc', set: 'cp1',
-  topic: "Selecting the optimal incremental strategy based on a dataset's characteristics",
+  topic: 'Selecting the optimal incremental strategy based on a dataset\'s characteristics',
   stem: `An incremental model uses ~incremental_strategy='merge'~ but has no ~unique_key~. Each run reprocesses the last 3 days of orders, and analysts now see duplicate ~order_id~ values. Why?`,
   options: [
     `Without a ~unique_key~, ~merge~ behaves like ~append~ and inserts the reprocessed rows again.`,
@@ -314,18 +343,20 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O ~merge~ usa a ~unique_key~ para decidir o que atualizar. Sem ela, ele se comporta como ~append~: insere tudo de novo e não checa duplicatas. Reprocessar uma janela de dias sem chave gera linhas repetidas.`,
-    `A correção é definir ~unique_key='order_id'~. ~on_schema_change~ trata colunas novas, não duplicatas.`
+    `~merge~ uses the ~unique_key~ to decide what to update. Without it, it behaves like ~append~: it inserts everything again and doesn't check for duplicates. Reprocessing a window of days without a key produces repeated rows.`,
+    `The fix is to set ~unique_key='order_id'~. ~on_schema_change~ handles new columns, not duplicates.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-strategy'
 },
 {
   id: 'cp-d1-inc-this', d: 'd1', type: 'fill', set: 'cp1',
-  topic: "Selecting the optimal incremental strategy based on a dataset's characteristics",
+  topic: 'Selecting the optimal incremental strategy based on a dataset\'s characteristics',
   stem: `Complete the incremental filter so each run only processes events newer than the ones already in the target table: ~where event_at > (select max(event_at) from {{ ______ }})~`,
-  accept: ['this'],
+  accept: [
+    `this`
+  ],
   exp: [
-    `~{{ this }}~ representa a própria relação do modelo no warehouse. Dentro de ~{% if is_incremental() %}~, ele permite comparar os dados novos com o que já foi carregado.`
+    `~{{ this }}~ represents the model's own relation in the warehouse. Inside ~{% if is_incremental() %}~, it lets you compare the new data with what has already been loaded.`
   ],
   doc: 'https://docs.getdbt.com/reference/dbt-jinja-functions/this'
 },
@@ -341,8 +372,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Pacotes são instalados com ~dbt deps~ na pasta ~dbt_packages/~ (o caminho padrão de ~packages-install-path~). Como a pasta é gerada, ela costuma ficar no ~.gitignore~, e cada ambiente roda ~dbt deps~ antes de usar o projeto.`,
-    `~dbt run~ não instala pacotes. Os modelos de pacotes **são** construídos junto com o projeto, a menos que você os desative. E o ~packages.yml~ fica na raiz, ao lado do ~dbt_project.yml~.`
+    `Packages are installed with ~dbt deps~ into the ~dbt_packages/~ folder (the default ~packages-install-path~). Since the folder is generated, it usually goes in ~.gitignore~, and each environment runs ~dbt deps~ before using the project.`,
+    `~dbt run~ doesn't install packages. Package models **are** built along with the project, unless you disable them. And ~packages.yml~ lives at the root, next to ~dbt_project.yml~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/packages'
 },
@@ -350,9 +381,11 @@ window.DBT_Q.push(
   id: 'cp-d1-py-session', d: 'd1', type: 'fill', set: 'cp1',
   topic: 'Creating Python Models',
   stem: `Complete the function signature that every dbt Python model defines: ~def model(dbt, ______):~`,
-  accept: ['session'],
+  accept: [
+    `session`
+  ],
   exp: [
-    `Todo modelo Python define ~def model(dbt, session)~ e retorna um DataFrame. ~dbt~ dá acesso a ~dbt.ref()~, ~dbt.source()~, ~dbt.config()~ e ~dbt.this~; ~session~ é a conexão com a plataforma (por exemplo, a sessão Snowpark ou Spark).`
+    `Every Python model defines ~def model(dbt, session)~ and returns a DataFrame. ~dbt~ gives access to ~dbt.ref()~, ~dbt.source()~, ~dbt.config()~ and ~dbt.this~; ~session~ is the connection to the platform (for example, the Snowpark or Spark session).`
   ],
   doc: 'https://docs.getdbt.com/docs/build/python-models'
 },
@@ -368,8 +401,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Quando o dbt reconstrói o modelo, a tabela é substituída e os grants feitos à mão se perdem. Com o config ~grants~, o dbt reaplica os privilégios declarados depois de cada build, e o acesso fica versionado no projeto.`,
-    `~access: public~ controla quem pode fazer ~ref()~ dentro do dbt, não permissões no banco. Modelos ephemeral nem existem no warehouse.`
+    `When dbt rebuilds the model, the table is replaced and grants made by hand are lost. With the ~grants~ config, dbt reapplies the declared privileges after every build, and access is versioned in the project.`,
+    `~access: public~ controls who can call ~ref()~ within dbt, not database permissions. Ephemeral models don't even exist in the warehouse.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/grants'
 },
@@ -385,8 +418,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~--sample~ filtra os inputs que têm ~event_time~ para uma janela de tempo, relativa (como ~"3 days"~ ou ~"6 hours"~) ou com início e fim. O modelo é construído com dados reais, só que menos, e dá para conferir o resultado. Ele existe para ~dbt run~ e ~dbt build~.`,
-    `~--empty~ gera zero linhas e serve para validar SQL e schema, não para ver dados. ~--full-refresh~ reprocessa tudo, o oposto do que você quer.`
+    `~--sample~ filters the inputs that have ~event_time~ to a time window, either relative (such as ~"3 days"~ or ~"6 hours"~) or with a start and end. The model is built with real data, just less of it, and you can check the result. It exists for ~dbt run~ and ~dbt build~.`,
+    `~--empty~ produces zero rows and is for validating SQL and schema, not for looking at data. ~--full-refresh~ reprocesses everything, the opposite of what you want.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/sample-flag'
 },
@@ -402,8 +435,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Transformações que mudam o grão ou preparam dados para os marts ficam na camada **intermediate**, em pastas por área de negócio. O guia sugere nomes no formato ~int_[entidade]s_[verbo]s~, como ~int_payments_pivoted_to_orders~.`,
-    `Staging só limpa e renomeia, 1 para 1 com a source. Marts são as entidades finais (~fct_~, ~dim_~), expostas aos consumidores.`
+    `Transformations that change the grain or prepare data for the marts belong in the **intermediate** layer, in folders by business area. The guide suggests names in the format ~int_[entity]s_[verb]s~, such as ~int_payments_pivoted_to_orders~.`,
+    `Staging only cleans and renames, 1:1 with the source. Marts are the final entities (~fct_~, ~dim_~), exposed to consumers.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/how-we-structure/3-intermediate'
 },
@@ -411,7 +444,12 @@ window.DBT_Q.push(
   id: 'cp-d1-proj-hotspot', d: 'd1', type: 'hotspot', set: 'cp1',
   topic: 'Defining configurations in dbt_project.yml',
   stem: `None of the folder configs below are applied, and dbt warns that some configuration paths in ~dbt_project.yml~ don't apply to any resources. The models live in ~models/staging/~ and ~models/marts/~. Click the line that causes it.`,
-  code: [{ lang: 'yaml', label: 'dbt_project.yml', hotspot: true, text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'dbt_project.yml',
+      hotspot: true,
+      text: `
     name: jaffle_shop
     version: '1.0.0'
     profile: jaffle_shop
@@ -423,24 +461,26 @@ window.DBT_Q.push(
         staging:
           +materialized: view
         marts:
-          +materialized: table` }],
+          +materialized: table`
+    }
+  ],
   answer: 7,
   exp: [
-    `Logo abaixo de ~models:~, o primeiro nível tem que ser o **nome do projeto** (o ~name~ do topo do arquivo) ou de um pacote instalado. ~jafle_shop~ está com erro de digitação, então nenhuma pasta embaixo dele corresponde a modelos, e o dbt avisa que esses caminhos não se aplicam a nada.`,
-    `O resto está certo: ~staging~ e ~marts~ são pastas dentro de ~models/~, e o ~+~ indica que ~materialized~ é um config, não uma subpasta.`
+    `Right below ~models:~, the first level must be the **project name** (the ~name~ at the top of the file) or the name of an installed package. ~jafle_shop~ has a typo, so no folder under it matches any models, and dbt warns that these paths don't apply to anything.`,
+    `The rest is correct: ~staging~ and ~marts~ are folders inside ~models/~, and the ~+~ indicates that ~materialized~ is a config, not a subfolder.`
   ],
   doc: 'https://docs.getdbt.com/reference/dbt_project.yml'
 },
-
-/* ── D2 · Managing dbt models governance (7) ── */
 {
   id: 'cp-d2-acc-default', d: 'd2', type: 'fill', set: 'cp1',
   topic: 'Model access, groups, contracts, and versions',
   stem: `Complete the blank. A model with no ~access~ config can be referenced by any model in the same project, and by a project that installs it as a package. This default access level is ______.`,
-  accept: ['protected'],
+  accept: [
+    `protected`
+  ],
   exp: [
-    `Por padrão, todo modelo é ~protected~: qualquer modelo do mesmo projeto pode fazer ~ref()~, e o projeto que instala esse código como pacote também.`,
-    `~private~ restringe ao mesmo ~group~, e ~public~ libera para qualquer grupo, pacote ou projeto.`
+    `By default, every model is ~protected~: any model in the same project can call ~ref()~ on it, and so can the project that installs this code as a package.`,
+    `~private~ restricts it to the same ~group~, and ~public~ opens it to any group, package or project.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-access'
 },
@@ -448,7 +488,12 @@ window.DBT_Q.push(
   id: 'cp-d2-grp-hotspot', d: 'd2', type: 'hotspot', set: 'cp1',
   topic: 'Model access, groups, contracts, and versions',
   stem: `The finance and marketing teams both want to own ~fct_campaign_revenue~. ~dbt parse~ fails on this file. Click the line that causes it.`,
-  code: [{ lang: 'yaml', label: 'models/marts/_groups.yml', hotspot: true, text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'models/marts/_groups.yml',
+      hotspot: true,
+      text: `
     groups:
       - name: finance
         owner:
@@ -461,11 +506,13 @@ window.DBT_Q.push(
       - name: fct_campaign_revenue
         config:
           group: [finance, marketing]
-          access: protected` }],
+          access: protected`
+    }
+  ],
   answer: 11,
   exp: [
-    `Cada modelo pertence a **um único** ~group~, então ~group~ recebe um nome, não uma lista. Escolha um dono (por exemplo, ~group: finance~); se o outro time precisa usar o modelo, o ~access~ ~protected~ ou ~public~ já permite o ~ref()~.`,
-    `As definições dos grupos estão certas: cada uma tem ~name~ e um ~owner~ com ~email~, que são obrigatórios.`
+    `Each model belongs to **a single** ~group~, so ~group~ takes a name, not a list. Pick an owner (for example, ~group: finance~); if the other team needs to use the model, ~protected~ or ~public~ ~access~ already allows the ~ref()~.`,
+    `The group definitions are correct: each one has a ~name~ and an ~owner~ with an ~email~, which are required.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/groups'
 },
@@ -481,8 +528,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Ao definir um grupo, ~name~ e ~owner~ são obrigatórios, e o ~owner~ precisa ter ~name~ ou ~email~. Grupos registram quem é responsável pelos modelos e servem de fronteira para o acesso ~private~.`,
-    `Grupos não mexem em permissões do banco (isso é ~grants~), cada modelo pertence a um grupo só, e ~protected~ é o padrão, que não depende de grupo.`
+    `When defining a group, ~name~ and ~owner~ are required, and the ~owner~ needs a ~name~ or an ~email~. Groups record who is responsible for the models and act as the boundary for ~private~ access.`,
+    `Groups don't touch database permissions (that is ~grants~), each model belongs to only one group, and ~protected~ is the default, which doesn't depend on groups.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/groups'
 },
@@ -498,8 +545,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Configs de pasta no ~dbt_project.yml~ viram o padrão para todos os modelos dela, e a config mais específica, no YAML do modelo, vence. Assim a regra geral fica num lugar só, e a exceção fica no próprio modelo.`,
-    `Um grupo pode ter modelos com níveis de acesso diferentes. As outras opções exigem repetir a config em cada modelo ou mudam o dono e o lugar do modelo sem necessidade.`
+    `Folder configs in ~dbt_project.yml~ become the default for all models in that folder, and the more specific config, in the model's YAML, wins. That way the general rule lives in one place, and the exception lives in the model itself.`,
+    `A group can have models with different access levels. The other options require repeating the config on every model or needlessly change the model's owner and location.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/access'
 },
@@ -515,8 +562,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Um modelo incremental com contrato precisa de ~on_schema_change: append_new_columns~ ou ~fail~. Nos dois casos, colunas existentes não são removidas em silêncio, o que quebraria a forma prometida pelo contrato.`,
-    `~sync_all_columns~ pode remover colunas da tabela, e ~ignore~ deixa a tabela sem as colunas novas, então nenhum dos dois é aceito.`
+    `An incremental model with a contract needs ~on_schema_change: append_new_columns~ or ~fail~. In both cases, existing columns are not silently removed, which would break the shape the contract promises.`,
+    `~sync_all_columns~ can remove columns from the table, and ~ignore~ leaves the table without the new columns, so neither is accepted.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-contracts'
 },
@@ -532,8 +579,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Para o dbt, quebram o contrato: remover uma coluna existente, mudar o ~data_type~ de uma coluna existente, remover ou alterar uma constraint e, desde o 1.9, apagar, renomear ou desativar o modelo contratado.`,
-    `Adicionar colunas não quebra quem já consome o modelo, e descrições e data tests não fazem parte da forma garantida pelo contrato.`
+    `For dbt, these break the contract: removing an existing column, changing the ~data_type~ of an existing column, removing or altering a constraint and, since 1.9, deleting, renaming or disabling the contracted model.`,
+    `Adding columns doesn't break existing consumers, and descriptions and data tests aren't part of the shape the contract guarantees.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-contracts'
 },
@@ -549,18 +596,21 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Por padrão, cada versão vira uma relação com o sufixo ~_v<versão>~. Um ~ref('dim_customers')~ sem versão resolve para a ~latest_version~, mas no banco os nomes continuam com sufixo.`,
-    `Se os consumidores precisam de um nome sem sufixo, é preciso criá-lo à parte, por exemplo com ~alias~ na versão mais recente ou com uma view que aponte para ela.`
+    `By default, each version becomes a relation with the ~_v<version>~ suffix. A ~ref('dim_customers')~ without a version resolves to ~latest_version~, but in the database the names still have the suffix.`,
+    `If consumers need a name without a suffix, it has to be created separately, for example with an ~alias~ on the latest version or with a view that points to it.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-versions'
 },
-
-/* ── D3 · Debugging data modeling errors (9) ── */
 {
   id: 'cp-d3-yaml-dash', d: 'd3', type: 'hotspot', set: 'cp1',
   topic: 'Troubleshooting .yml compilation errors',
   stem: `~dbt parse~ fails with a YAML error in this properties file. Click the line that causes it.`,
-  code: [{ lang: 'yaml', label: 'models/staging/_stg_shop.yml', hotspot: true, text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'models/staging/_stg_shop.yml',
+      hotspot: true,
+      text: `
     models:
       - name: stg_shop__orders
         columns:
@@ -571,11 +621,13 @@ window.DBT_Q.push(
           name: customer_id
             description: Foreign key to stg_shop__customers
           - name: status
-            description: Current order status` }],
+            description: Current order status`
+    }
+  ],
   answer: 7,
   exp: [
-    `Cada coluna é um item da lista ~columns~ e precisa começar com ~-~. Em ~name: customer_id~ falta o traço, então o YAML encontra uma chave solta no meio da lista e não consegue ler o arquivo. O certo é ~- name: customer_id~.`,
-    `Erros de YAML aparecem no ~dbt parse~ (e em qualquer outro comando) antes de qualquer acesso ao warehouse, com o arquivo e a linha aproximada.`
+    `Each column is an item in the ~columns~ list and must start with ~-~. ~name: customer_id~ is missing the dash, so the YAML finds a loose key in the middle of the list and can't read the file. The right form is ~- name: customer_id~.`,
+    `YAML errors show up in ~dbt parse~ (and in any other command) before any access to the warehouse, with the file and the approximate line.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -591,8 +643,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `No YAML, alguns caracteres não podem começar um valor sem aspas: ~@~ e a crase são reservados, ~*~ e ~&~ marcam alias e âncora, e ~{~ e ~[~ abrem estruturas. Colocar o texto entre aspas resolve.`,
-    `Fora de aspas duplas, a barra invertida não escapa nada. ~version: 2~ é opcional desde o dbt 1.5 e não tem relação com o erro.`
+    `In YAML, some characters can't start an unquoted value: ~@~ and the backtick are reserved, ~*~ and ~&~ mark aliases and anchors, and ~{~ and ~[~ open structures. Quoting the text fixes it.`,
+    `Outside double quotes, the backslash doesn't escape anything. ~version: 2~ has been optional since dbt 1.5 and has nothing to do with the error.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -608,8 +660,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O ~name~ no YAML precisa ser igual ao nome do modelo, que vem do nome do arquivo ~.sql~. ~stg_shop_orders~ não corresponde a ~stg_shop__orders~, então o dbt não encontra o nó e ignora os testes, as descrições e as configs dessa entrada.`,
-    `Arquivos de propriedades podem ter qualquer nome e ficar em qualquer pasta de ~model-paths~.`
+    `The ~name~ in the YAML must match the model name, which comes from the ~.sql~ file name. ~stg_shop_orders~ doesn't match ~stg_shop__orders~, so dbt doesn't find the node and ignores the tests, descriptions and configs in that entry.`,
+    `Properties files can have any name and live in any folder under ~model-paths~.`
   ],
   doc: 'https://docs.getdbt.com/reference/model-properties'
 },
@@ -625,8 +677,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O ~+~ em ~state:modified+~ existe justamente para testar os filhos do que mudou. Se a mudança de grão gerou duplicatas em ~fct_revenue~, o CI pegou um problema real antes do merge.`,
-    `Tirar o modelo do CI ou fazer o merge só esconde o erro, que apareceria em produção. ~--full-refresh~ não muda a lógica.`
+    `The ~+~ in ~state:modified+~ exists precisely to test the children of what changed. If the grain change created duplicates in ~fct_revenue~, CI caught a real problem before the merge.`,
+    `Taking the model out of CI or merging anyway only hides the error, which would show up in production. ~--full-refresh~ doesn't change the logic.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/best-practice-workflows'
 },
@@ -642,8 +694,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Um unit test com o caso que quebrou documenta o comportamento esperado e passa a rodar em todo ~dbt build~ e no CI. Ver o teste falhar antes da correção confirma que ele realmente cobre o bug.`,
-    `Conferir com ~dbt show~ ajuda na hora, mas não protege as mudanças futuras. Comentários e ~--full-refresh~ não testam nada.`
+    `A unit test with the case that broke documents the expected behavior and runs on every ~dbt build~ and in CI. Seeing the test fail before the fix confirms it really covers the bug.`,
+    `Checking with ~dbt show~ helps in the moment, but doesn't protect future changes. Comments and ~--full-refresh~ test nothing.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/unit-tests'
 },
@@ -659,8 +711,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O ~profile:~ do ~dbt_project.yml~ diz qual perfil do ~profiles.yml~ usar. Se esse perfil não existe (arquivo ausente, nome diferente ou arquivo fora da pasta ~.dbt~ do usuário sem ~--profiles-dir~), o dbt para antes de conectar. ~dbt debug~ mostra onde ele está procurando.`,
-    `Senha expirada gera erro de conexão (~Database Error~), e pacotes faltando geram outra mensagem, que pede ~dbt deps~.`
+    `The ~profile:~ in ~dbt_project.yml~ says which profile in ~profiles.yml~ to use. If that profile doesn't exist (missing file, different name or a file outside the user's ~.dbt~ folder without ~--profiles-dir~), dbt stops before connecting. ~dbt debug~ shows where it is looking.`,
+    `An expired password produces a connection error (~Database Error~), and missing packages produce a different message, asking for ~dbt deps~.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -676,8 +728,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O DAG do dbt precisa ser acíclico: nenhum modelo pode depender, direta ou indiretamente, de si mesmo. A mensagem mostra o caminho do ciclo. A saída é levar a lógica comum para um modelo anterior aos dois, ou inverter uma das dependências.`,
-    `Nomes duplicados e materializações geram outros erros, e ~--threads~ não muda a estrutura do DAG.`
+    `dbt's DAG must be acyclic: no model can depend, directly or indirectly, on itself. The message shows the path of the cycle. The way out is to move the shared logic into a model upstream of both, or to reverse one of the dependencies.`,
+    `Duplicate names and materializations produce other errors, and ~--threads~ doesn't change the structure of the DAG.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -685,9 +737,12 @@ window.DBT_Q.push(
   id: 'cp-d3-flag-partial', d: 'd3', type: 'fill', set: 'cp1',
   topic: 'Managing dbt behavior with flags',
   stem: `Complete the flag that makes dbt ignore its saved parse results and read the whole project again from scratch: ~dbt run ______~`,
-  accept: ['--no-partial-parse', 'no-partial-parse'],
+  accept: [
+    `--no-partial-parse`,
+    `no-partial-parse`
+  ],
   exp: [
-    `Por padrão, o dbt usa partial parsing: guarda o resultado da leitura em ~target/partial_parse.msgpack~ e só relê os arquivos alterados. Quando esse cache parece desatualizado ou causa erros estranhos, ~--no-partial-parse~ força uma leitura completa.`
+    `By default, dbt uses partial parsing: it stores the parse result in ~target/partial_parse.msgpack~ and only rereads the files that changed. When that cache seems stale or causes strange errors, ~--no-partial-parse~ forces a full parse.`
   ],
   doc: 'https://docs.getdbt.com/reference/parsing'
 },
@@ -695,7 +750,12 @@ window.DBT_Q.push(
   id: 'cp-d3-cc-hotspot', d: 'd3', type: 'hotspot', set: 'cp1',
   topic: 'Troubleshooting using compiled code',
   stem: `~fct_orders~ returns zero rows in development, even though ~stg_orders~ has data. Below is the model's SQL from ~target/compiled~. Click the line that explains the empty result.`,
-  code: [{ lang: 'sql', label: 'target/compiled/jaffle_shop/models/marts/fct_orders.sql', hotspot: true, text: `
+  code: [
+    {
+      lang: 'sql',
+      label: 'target/compiled/jaffle_shop/models/marts/fct_orders.sql',
+      hotspot: true,
+      text: `
     with orders as (
         select * from "analytics"."dbt_jdoe"."stg_orders"
     ),
@@ -712,16 +772,16 @@ window.DBT_Q.push(
         where orders.order_date >= '2099-01-01'
         group by 1, 2
     )
-    select * from final` }],
+    select * from final`
+    }
+  ],
   answer: 13,
   exp: [
-    `O código compilado mostra o valor que o Jinja realmente gerou: o filtro virou ~>= '2099-01-01'~, uma data no futuro. Isso acontece quando a variável usada no filtro não está definida no ambiente e o modelo cai no valor padrão de ~var()~.`,
-    `A correção é definir ~start_date~ em ~vars:~ no ~dbt_project.yml~ (ou passar ~--vars~) e rever esse padrão. Ler ~target/compiled~ é o jeito mais rápido de achar esse tipo de erro, porque o arquivo do modelo só mostra o Jinja.`
+    `The compiled code shows the value the Jinja actually produced: the filter became ~>= '2099-01-01'~, a date in the future. This happens when the variable used in the filter isn't defined in the environment and the model falls back to the ~var()~ default.`,
+    `The fix is to define ~start_date~ under ~vars:~ in ~dbt_project.yml~ (or pass ~--vars~) and to rethink that default. Reading ~target/compiled~ is the fastest way to find this kind of error, because the model file only shows the Jinja.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/compile'
 },
-
-/* ── D4 · Troubleshooting and optimizing dbt pipelines (5) ── */
 {
   id: 'cp-d4-cl-views', d: 'd4', type: 'mc', set: 'cp1',
   topic: 'Using dbt clone',
@@ -734,13 +794,14 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Onde existe clone sem cópia de dados (Snowflake, Databricks e BigQuery), o dbt clona as tabelas. Nas outras plataformas, ele cria uma view simples, um ~select~ de tudo do objeto de produção, que é rápida e não duplica dados.`,
-    `Em qualquer caso, o clone não reprocessa a lógica dos modelos.`
+    `Where zero-copy cloning exists (Snowflake, Databricks and BigQuery), dbt clones the tables. On other platforms, it creates a simple view, a ~select~ of everything from the production object, which is fast and doesn't duplicate data.`,
+    `Either way, clone doesn't reprocess the models' logic.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/clone'
 },
 {
-  id: 'cp-d4-cl-needs', d: 'd4', type: 'multi', choose: 2, set: 'cp1',
+  id: 'cp-d4-cl-needs', d: 'd4', type: 'multi', set: 'cp1',
+  choose: 2,
   topic: 'Using dbt clone',
   stem: `You want to use ~dbt clone~ to populate a new CI schema from production. Which two things does it need? (Choose two.)`,
   options: [
@@ -752,8 +813,8 @@ window.DBT_Q.push(
   ],
   answers: [0, 1],
   exp: [
-    `O ~dbt clone~ lê o ~manifest.json~ do ambiente de origem, via ~--state~, para saber quais relações existem e onde estão. Depois cria clones ou views no seu target, então as credenciais desse target precisam conseguir ler os objetos de produção.`,
-    `Ele não reconstrói produção, usa o seu próprio target (não o ~profiles.yml~ de produção) e não depende do ~catalog.json~.`
+    `~dbt clone~ reads the source environment's ~manifest.json~, via ~--state~, to know which relations exist and where they are. Then it creates clones or views in your target, so that target's credentials must be able to read the production objects.`,
+    `It doesn't rebuild production, it uses your own target (not the production ~profiles.yml~) and it doesn't depend on ~catalog.json~.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/clone'
 },
@@ -769,8 +830,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~Database Error~ quer dizer que o warehouse recusou o comando. Se o mesmo código roda em dev, o problema está no ambiente: o role ou usuário do target de produção precisa de privilégios para criar e substituir objetos no schema de destino, ou para criar o schema.`,
-    `Os refs são resolvidos pelo próprio projeto, sem manifest de produção, e um teste falhando gera SKIP nos filhos, não erro de privilégio.`
+    `~Database Error~ means the warehouse refused the command. If the same code runs in dev, the problem is in the environment: the production target's role or user needs privileges to create and replace objects in the destination schema, or to create the schema.`,
+    `Refs are resolved by the project itself, without a production manifest, and a failing test causes SKIP on its children, not a privilege error.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -786,8 +847,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Quando a estrutura de um seed muda (nomes ou tipos de colunas), é preciso ~--full-refresh~, que recria a tabela no novo formato. Sem isso, o dbt tenta recarregar os dados na tabela antiga.`,
-    `~dbt retry~ repetiria o mesmo erro, ~dbt run~ não carrega seeds e ~--empty~ não recria tabelas.`
+    `When a seed's structure changes (column names or types), you need ~--full-refresh~, which recreates the table in the new format. Without it, dbt tries to reload the data into the old table.`,
+    `~dbt retry~ would repeat the same error, ~dbt run~ doesn't load seeds and ~--empty~ doesn't recreate tables.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/seed'
 },
@@ -803,29 +864,34 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Um erro só afeta quem depende do nó que falhou: os descendentes ficam como SKIP, e o resto do DAG continua. No fim, o comando termina com erro, e o ~run_results.json~ registra o status de cada nó, o que permite usar ~dbt retry~ depois.`,
-    `Parar tudo no primeiro erro é o comportamento de ~--fail-fast~, e o dbt não faz novas tentativas automáticas por padrão.`
+    `An error only affects what depends on the failed node: its descendants are SKIPPED, and the rest of the DAG continues. At the end, the command exits with an error, and ~run_results.json~ records each node's status, which lets you use ~dbt retry~ afterward.`,
+    `Stopping everything at the first error is the behavior of ~--fail-fast~, and dbt doesn't retry automatically by default.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/build'
 },
-
-/* ── D5 · Implementing dbt tests (10) ── */
 {
   id: 'cp-d5-cg-hotspot', d: 'd5', type: 'hotspot', set: 'cp1',
   topic: 'Using generic, singular, custom, custom generic, and unit tests',
   stem: `This custom generic test fails to compile as soon as it is applied to a column in YAML. Click the line with the bug.`,
-  code: [{ lang: 'sql', label: 'tests/generic/not_negative.sql', hotspot: true, text: `
+  code: [
+    {
+      lang: 'sql',
+      label: 'tests/generic/not_negative.sql',
+      hotspot: true,
+      text: `
     {% test not_negative(column_name) %}
 
     select *
     from {{ model }}
     where {{ column_name }} < 0
 
-    {% endtest %}` }],
+    {% endtest %}`
+    }
+  ],
   answer: 0,
   exp: [
-    `Testes genéricos recebem os argumentos padrão ~model~ e ~column_name~, e eles precisam estar na assinatura: ~{% test not_negative(model, column_name) %}~. Sem ~model~, a chamada que o dbt faz ao teste não encaixa na definição.`,
-    `O corpo está certo: retorna as linhas com valor negativo, que são as falhas.`
+    `Generic tests receive the standard arguments ~model~ and ~column_name~, and they must be in the signature: ~{% test not_negative(model, column_name) %}~. Without ~model~, the call dbt makes to the test doesn't fit the definition.`,
+    `The body is correct: it returns the rows with a negative value, which are the failures.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/writing-custom-generic-tests'
 },
@@ -833,9 +899,13 @@ window.DBT_Q.push(
   id: 'cp-d5-sg-folder', d: 'd5', type: 'fill', set: 'cp1',
   topic: 'Using generic, singular, custom, custom generic, and unit tests',
   stem: `Complete the blank with the default folder name. A singular data test is a ~.sql~ file whose query returns the failing rows, saved in the ______ folder of the project.`,
-  accept: ['tests', 'tests/', 'tests folder'],
+  accept: [
+    `tests`,
+    `tests/`,
+    `tests folder`
+  ],
   exp: [
-    `Testes singulares ficam em ~tests/~, o caminho padrão de ~test-paths~ no ~dbt_project.yml~. Cada arquivo é um ~select~ que retorna as linhas que violam a regra e pode usar ~ref()~ e ~source()~.`
+    `Singular tests live in ~tests/~, the default ~test-paths~ in ~dbt_project.yml~. Each file is a ~select~ that returns the rows that violate the rule and can use ~ref()~ and ~source()~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/data-tests'
 },
@@ -851,8 +921,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O teste ~relationships~ filtra ~customer_id is not null~ antes de procurar valores sem correspondência no modelo pai, então NULLs nunca contam como falha. Para exigir o valor, combine com ~not_null~.`,
-    `Não há limite de linhas por padrão, e em SQL um NULL não casa com nada num join.`
+    `The ~relationships~ test filters ~customer_id is not null~ before looking for values with no match in the parent model, so NULLs never count as failures. To require a value, combine it with ~not_null~.`,
+    `There is no row limit by default, and in SQL a NULL doesn't match anything in a join.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/data-tests'
 },
@@ -866,14 +936,20 @@ window.DBT_Q.push(
     `The same "value must be positive" rule on 30 columns`,
     `Validate a complex CASE expression against hand-made input rows`
   ],
-  right: [`Built-in generic test`, `Singular test`, `Custom generic test`, `Unit test`, `Source freshness`],
+  right: [
+    `Built-in generic test`,
+    `Singular test`,
+    `Custom generic test`,
+    `Unit test`,
+    `Source freshness`
+  ],
   answer: [0, 1, 2, 3],
   exp: [
-    `• Os genéricos nativos (~unique~, ~not_null~, ~accepted_values~, ~relationships~) cobrem regras comuns com uma linha de YAML.`,
-    `• Um teste singular é um ~select~ escrito para uma regra específica, que não vai se repetir.`,
-    `• Quando a mesma regra se repete em vários lugares, vale escrever um teste genérico próprio, com ~{% test %}~, e aplicá-lo no YAML.`,
-    `• Unit tests checam a lógica do modelo com dados de entrada fixos, antes de chegar aos dados reais.`,
-    `Source freshness mede atraso de carga, não regras de negócio.`
+    `• The built-in generic tests (~unique~, ~not_null~, ~accepted_values~, ~relationships~) cover common rules with one line of YAML.`,
+    `• A singular test is a ~select~ written for a specific rule that won't repeat.`,
+    `• When the same rule repeats in several places, it is worth writing your own generic test, with ~{% test %}~, and applying it in YAML.`,
+    `• Unit tests check the model's logic with fixed input data, before it reaches real data.`,
+    `Source freshness measures load delay, not business rules.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/data-tests'
 },
@@ -889,8 +965,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O teste passa quando a consulta retorna zero linhas. Por ser um arquivo SQL comum em ~tests/~, pode usar ~ref()~, ~source()~, macros e ~{{ config() }}~, por exemplo para definir ~severity~.`,
-    `Ele não precisa de YAML para rodar: o dbt encontra o arquivo pela pasta. O YAML é opcional, para descrição e configs.`
+    `The test passes when the query returns zero rows. Since it is a regular SQL file in ~tests/~, it can use ~ref()~, ~source()~, macros and ~{{ config() }}~, for example to set ~severity~.`,
+    `It doesn't need YAML to run: dbt finds the file by its folder. YAML is optional, for a description and configs.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/data-tests'
 },
@@ -905,7 +981,7 @@ window.DBT_Q.push(
     `~dbt docs generate~, to refresh the documentation`
   ],
   exp: [
-    `Primeiro os pacotes, porque o projeto depende deles para compilar. Depois a freshness, para não gastar o build com dados atrasados. Então o ~dbt build~, que constrói e testa cada nó na ordem do DAG; os unit tests ficam para dev e CI. Por último o ~docs generate~, para o catálogo refletir os objetos recém-criados.`
+    `Packages first, because the project depends on them to compile. Then freshness, so you don't spend the build on late data. Then ~dbt build~, which builds and tests each node in DAG order; unit tests are left for dev and CI. Finally ~docs generate~, so the catalog reflects the newly created objects.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/build'
 },
@@ -921,13 +997,14 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O método ~test_type:~ aceita ~generic~, ~singular~, ~unit~ e ~data~. ~test_type:singular~ pega só os testes escritos como arquivos SQL, enquanto ~test_type:data~ junta genéricos e singulares.`,
-    `Não existe a flag ~--singular~, e ~resource_type~ distingue tipos de recurso (model, test, seed), não tipos de teste.`
+    `The ~test_type:~ method accepts ~generic~, ~singular~, ~unit~ and ~data~. ~test_type:singular~ selects only the tests written as SQL files, while ~test_type:data~ combines generic and singular tests.`,
+    `There is no ~--singular~ flag, and ~resource_type~ distinguishes resource types (model, test, seed), not test types.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods#test_type'
 },
 {
-  id: 'cp-d5-wf-severity', d: 'd5', type: 'mc', codeOptions: true, set: 'cp1',
+  id: 'cp-d5-wf-severity', d: 'd5', type: 'mc', set: 'cp1',
+  codeOptions: true,
   topic: 'Implementing various testing steps in the workflow',
   stem: `You want every data test defined in ~models/staging/~ to warn instead of error, without editing each test. The project is named ~jaffle_shop~. What should you add to ~dbt_project.yml~?`,
   options: [
@@ -953,8 +1030,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Configs de testes no ~dbt_project.yml~ ficam sob ~data_tests:~, com o nome do projeto e o caminho. O caminho é onde o teste está definido: para testes genéricos, a pasta do arquivo YAML; para singulares, a pasta do ~.sql~.`,
-    `Sob ~models:~, ~severity~ não vale para os testes. E ~+severity: warn~ direto em ~data_tests:~ afetaria todos os testes do projeto, não só os de staging.`
+    `Test configs in ~dbt_project.yml~ go under ~data_tests:~, with the project name and the path. The path is where the test is defined: for generic tests, the folder of the YAML file; for singular tests, the folder of the ~.sql~ file.`,
+    `Under ~models:~, ~severity~ doesn't apply to tests. And ~+severity: warn~ directly under ~data_tests:~ would affect every test in the project, not just the staging ones.`
   ],
   doc: 'https://docs.getdbt.com/reference/data-test-configs'
 },
@@ -970,8 +1047,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~accepted_range~, do dbt_utils, verifica se os valores ficam entre ~min_value~ e ~max_value~, inclusivos por padrão (~inclusive: true~). No dbt 1.11, os parâmetros ficam em ~arguments:~ no YAML.`,
-    `~accepted_values~ aceitaria só exatamente 0 ou 1, e os outros testes checam unicidade e integridade referencial.`
+    `~accepted_range~, from dbt_utils, checks that values fall between ~min_value~ and ~max_value~, inclusive by default (~inclusive: true~). In dbt 1.11, the parameters go under ~arguments:~ in the YAML.`,
+    `~accepted_values~ would accept only exactly 0 or 1, and the other tests check uniqueness and referential integrity.`
   ],
   doc: 'https://hub.getdbt.com/dbt-labs/dbt_utils/latest/'
 },
@@ -987,18 +1064,21 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O config ~where~ filtra as linhas que o teste avalia. Assim o ~not_null~ só olha os pedidos que deveriam ter ~shipped_at~ e falha de verdade quando um deles está vazio.`,
-    `~severity: warn~ só rebaixa o resultado, sem tirar os cancelados da conta, e as outras opções nem testam ~shipped_at~.`
+    `The ~where~ config filters the rows the test evaluates. That way ~not_null~ only looks at the orders that should have ~shipped_at~ and really fails when one of them is empty.`,
+    `~severity: warn~ only downgrades the result, without taking the canceled orders out of the count, and the other options don't even test ~shipped_at~.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/where'
 },
-
-/* ── D6 · Implementing and maintaining external dependencies (4) ── */
 {
   id: 'cp-d6-f-hotspot', d: 'd6', type: 'hotspot', set: 'cp1',
   topic: 'Implementing source freshness',
   stem: `~dbt parse~ fails on this source definition. Click the line that causes it.`,
-  code: [{ lang: 'yaml', label: 'models/staging/shop/_shop__sources.yml', hotspot: true, text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'models/staging/shop/_shop__sources.yml',
+      hotspot: true,
+      text: `
     sources:
       - name: shop
         database: raw
@@ -1009,11 +1089,13 @@ window.DBT_Q.push(
             error_after: {count: 2, period: days}
         tables:
           - name: orders
-          - name: customers` }],
+          - name: customers`
+    }
+  ],
   answer: 7,
   exp: [
-    `~period~ só aceita ~minute~, ~hour~ ou ~day~, sempre no singular, então ~days~ é inválido. Para dois dias, use ~{count: 2, period: day}~ ou ~{count: 48, period: hour}~.`,
-    `O resto segue o formato atual: ~freshness~ e ~loaded_at_field~ ficam em ~config:~ (desde o 1.9 e o 1.10, respectivamente), e as tabelas herdam a configuração da source.`
+    `~period~ only accepts ~minute~, ~hour~ or ~day~, always singular, so ~days~ is invalid. For two days, use ~{count: 2, period: day}~ or ~{count: 48, period: hour}~.`,
+    `The rest follows the current format: ~freshness~ and ~loaded_at_field~ go under ~config:~ (since 1.9 and 1.10, respectively), and the tables inherit the source's configuration.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/freshness'
 },
@@ -1021,9 +1103,14 @@ window.DBT_Q.push(
   id: 'cp-d6-f-artifact', d: 'd6', type: 'fill', set: 'cp1',
   topic: 'Implementing source freshness',
   stem: `Complete the blank with the artifact file name. ~dbt source freshness~ saves the status and age of each source table to ______ in the target folder.`,
-  accept: ['sources.json', 'sources', 'target/sources.json', 'sources json'],
+  accept: [
+    `sources.json`,
+    `sources`,
+    `target/sources.json`,
+    `sources json`
+  ],
   exp: [
-    `~sources.json~ guarda o resultado da última checagem de freshness. Com o de uma execução anterior em ~--state~, o seletor ~source_status:fresher~ compara as duas e pega só o que recebeu dados novos.`
+    `~sources.json~ holds the result of the last freshness check. With the one from a previous run in ~--state~, the ~source_status:fresher~ selector compares the two and picks only what received new data.`
   ],
   doc: 'https://docs.getdbt.com/reference/artifacts/sources-json'
 },
@@ -1039,8 +1126,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Exposures ficam no fim do DAG, como descendentes dos modelos que consomem. ~stg_orders+~ pega todos os descendentes, e ~--resource-type exposure~ deixa só as exposures na lista.`,
-    `~+stg_orders~ pega os ancestrais, e ~exposure:stg_orders~ procuraria uma exposure com esse nome.`
+    `Exposures sit at the end of the DAG, as descendants of the models they consume. ~stg_orders+~ selects all descendants, and ~--resource-type exposure~ leaves only the exposures in the list.`,
+    `~+stg_orders~ selects the ancestors, and ~exposure:stg_orders~ would look for an exposure with that name.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/exposures'
 },
@@ -1056,21 +1143,21 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Os itens de ~depends_on~ são resolvidos como qualquer ~ref()~. Se o modelo citado não existe mais, o parse falha com um erro de nó não encontrado. Troque para ~ref('fct_order_lines')~.`,
-    `O dbt não acessa a URL, e exposures podem depender de modelos, sources e métricas.`
+    `The items in ~depends_on~ are resolved like any ~ref()~. If the referenced model no longer exists, parsing fails with a node-not-found error. Change it to ~ref('fct_order_lines')~.`,
+    `dbt doesn't access the URL, and exposures can depend on models, sources and metrics.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/exposures'
 },
-
-/* ── D7 · Leveraging the dbt state (4) ── */
 {
   id: 'cp-d7-st-new', d: 'd7', type: 'fill', set: 'cp1',
   topic: 'Understanding state and state selection',
   stem: `Complete the selector so it picks only nodes that don't exist at all in the production manifest: ~dbt build --select state:______ --state prod-artifacts~`,
-  accept: ['new'],
+  accept: [
+    `new`
+  ],
   exp: [
-    `~state:new~ seleciona os nós que não existem no manifest de comparação. ~state:modified~ inclui esses nós novos **e** os que mudaram.`,
-    `Também existem ~state:old~ (nós que já existiam), ~state:unmodified~ e subseletores como ~state:modified.body~ e ~state:modified.configs~.`
+    `~state:new~ selects the nodes that don't exist in the comparison manifest. ~state:modified~ includes those new nodes **and** the ones that changed.`,
+    `There are also ~state:old~ (nodes that already existed), ~state:unmodified~ and sub-selectors such as ~state:modified.body~ and ~state:modified.configs~.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods#state'
 },
@@ -1086,8 +1173,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~state:modified~ compara o manifest atual com o de ~--state~: pega nós novos e mudanças no SQL, nas configs, nas descrições persistidas, nos contratos e nas macros usadas. Há subseletores para cada tipo, como ~state:modified.macros~.`,
-    `Ele compara código, não dados. As falhas da última execução ficam no ~run_results.json~ e são selecionadas com ~result:~.`
+    `~state:modified~ compares the current manifest with the one in ~--state~: it picks up new nodes and changes to SQL, configs, persisted descriptions, contracts and the macros used. There are sub-selectors for each kind, such as ~state:modified.macros~.`,
+    `It compares code, not data. Failures from the last run are in ~run_results.json~ and are selected with ~result:~.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods#state'
 },
@@ -1103,8 +1190,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O ~dbt retry~ retoma a última execução a partir do ponto de falha: roda o que deu erro e o que foi pulado por causa dele. Como o projeto é lido de novo, a correção que você fez já vale.`,
-    `O que deu certo não é repetido. É o fluxo que a documentação mostra: corrigir o erro e rodar ~dbt retry~.`
+    `~dbt retry~ resumes the last run from the point of failure: it runs what errored and what was skipped because of it. Since the project is read again, the fix you made already applies.`,
+    `What succeeded isn't repeated. This is the flow the documentation shows: fix the error and run ~dbt retry~.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/retry'
 },
@@ -1120,8 +1207,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Cada comando grava um novo ~run_results.json~ em ~target/~. O retry usa esse arquivo para saber de onde retomar, então passou a ver o ~compile~, que não teve falhas.`,
-    `Agora é preciso rodar o ~dbt build~ de novo. O retry funciona normalmente com ~build~ e não tem limite de tempo.`
+    `Every command writes a new ~run_results.json~ to ~target/~. Retry uses that file to know where to resume, so it now sees the ~compile~, which had no failures.`,
+    `Now you need to run ~dbt build~ again. Retry works normally with ~build~ and has no time limit.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/retry'
 }

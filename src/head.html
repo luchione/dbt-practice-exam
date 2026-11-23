@@ -1,4 +1,4 @@
-<title>Simulado dbt Analytics Engineering</title>
+<title>dbt AE Practice Exam</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,6 +91,8 @@ button { font: inherit; }
 /* Start screen */
 .eyebrow { font: 600 12px/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
 .hero { display: grid; gap: 14px; padding-block: 8px 28px; }
+.lang-switch { font-size: 14px; }
+.lang-switch a { color: var(--accent); font-weight: 600; }
 .hero h1 { font: 700 clamp(32px, 6vw, 48px)/1.04 var(--font-display); letter-spacing: -.02em; }
 .lede { max-width: 62ch; color: var(--muted); font-size: 17px; }
 .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
@@ -338,10 +340,10 @@ button { font: inherit; }
 
 <header class="bar" id="bar" hidden>
   <div class="bar-in">
-    <button class="brand" id="bar-home" type="button" title="Voltar ao início">dbt AE · Simulado</button>
+    <button class="brand" id="bar-home" type="button" title="Back to start">dbt AE · Practice exam</button>
     <div class="bar-mid"><span id="bar-progress"></span><span id="bar-score"></span></div>
     <span class="timer" id="bar-timer" hidden></span>
-    <button class="btn btn-sm" id="bar-finish" type="button">Finalizar</button>
+    <button class="btn btn-sm" id="bar-finish" type="button">Finish</button>
   </div>
   <div class="progress"><i id="bar-fill"></i></div>
 </header>
@@ -353,13 +355,13 @@ button { font: inherit; }
     <div id="actions" class="actions"></div>
     <div id="confirm" class="confirm" hidden></div>
     <details class="map" id="map" open>
-      <summary>Mapa de questões</summary>
+      <summary>Question map</summary>
       <div class="legend">
-        <span><i></i>Sem resposta</span>
-        <span><i class="answered"></i>Respondida</span>
-        <span><i class="correct"></i>Correta</span>
-        <span><i class="wrong"></i>Incorreta</span>
-        <span><i class="flagged"></i>Marcada para revisão</span>
+        <span><i></i>Unanswered</span>
+        <span><i class="answered"></i>Answered</span>
+        <span><i class="correct"></i>Correct</span>
+        <span><i class="wrong"></i>Incorrect</span>
+        <span><i class="flagged"></i>Marked for review</span>
       </div>
       <div id="palette" class="palette"></div>
     </details>
@@ -369,11 +371,11 @@ button { font: inherit; }
     <article id="fcard" class="qcard"></article>
     <div id="factions" class="actions"></div>
     <details class="map" id="fmap" hidden>
-      <summary id="fmap-sum">Histórico da sessão</summary>
+      <summary id="fmap-sum">Session history</summary>
       <div class="legend">
-        <span><i></i>Pulada ou sem resposta</span>
-        <span><i class="correct"></i>Correta</span>
-        <span><i class="wrong"></i>Incorreta</span>
+        <span><i></i>Skipped or unanswered</span>
+        <span><i class="correct"></i>Correct</span>
+        <span><i class="wrong"></i>Incorrect</span>
       </div>
       <div id="fpalette" class="palette"></div>
     </details>

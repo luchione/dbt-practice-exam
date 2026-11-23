@@ -1,4 +1,4 @@
-/* Domain 1 · Developing and optimizing dbt models · bank expansion B (28) */
+/* Domain 1, part B: project config, packages, Python, grants, snapshots, incremental, --empty, --sample, microbatch. */
 window.DBT_Q.push(
 {
   id: 'd1-pkg-deps', d: 'd1', type: 'mc',
@@ -12,8 +12,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Declarar o pacote em ~packages.yml~ não basta: ~dbt deps~ baixa os pacotes para ~dbt_packages/~ (e atualiza o ~package-lock.yml~). Sem isso, os macros do pacote não existem no contexto Jinja.`,
-    `Rode ~dbt deps~ sempre que alterar ~packages.yml~ e em cada ambiente novo (CI, jobs de produção).`
+    `Declaring the package in ~packages.yml~ isn't enough: ~dbt deps~ downloads the packages into ~dbt_packages/~ (and updates ~package-lock.yml~). Without it, the package's macros don't exist in the Jinja context.`,
+    `Run ~dbt deps~ whenever you change ~packages.yml~ and in every new environment (CI, production jobs).`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/deps'
 },
@@ -29,8 +29,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O ~dbt_project.yml~ do projeto raiz pode configurar recursos de pacotes usando o **nome do pacote** como chave sob ~models:~ (o mesmo vale para ~+enabled: false~ e outras configs).`,
-    `Arquivos em ~dbt_packages/~ são sobrescritos a cada ~dbt deps~. ~packages.yml~ só declara o que instalar, e ~profiles.yml~ só define conexões.`
+    `The root project's ~dbt_project.yml~ can configure package resources using the **package name** as the key under ~models:~ (the same goes for ~+enabled: false~ and other configs).`,
+    `Files in ~dbt_packages/~ are overwritten on every ~dbt deps~. ~packages.yml~ only declares what to install, and ~profiles.yml~ only defines connections.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/packages#configuring-packages'
 },
@@ -46,8 +46,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dependencies.yml~ aceita pacotes e dependências de projetos (dbt Mesh), mas **não renderiza Jinja**. Quando você precisa de ~env_var()~ na definição (como tokens de repositórios privados), use ~packages.yml~.`,
-    `Variáveis ~DBT_ENV_SECRET_~ são permitidas em ~packages.yml~ e ficam mascaradas nos logs.`
+    `~dependencies.yml~ accepts packages and project dependencies (dbt Mesh), but **doesn't render Jinja**. When you need ~env_var()~ in the definition (such as tokens for private repositories), use ~packages.yml~.`,
+    `~DBT_ENV_SECRET_~ variables are allowed in ~packages.yml~ and are masked in logs.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/packages'
 },
@@ -63,9 +63,9 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Pacotes do Hub aceitam uma versão exata ou um intervalo como lista de restrições. O intervalo permite correções e melhorias sem pular para uma versão major com mudanças incompatíveis. O ~package-lock.yml~ fixa o que foi resolvido.`,
-    `• ~">1.1.0"~ aceitaria a 2.x e exclui a própria 1.1.0.`,
-    `• ~revision~ é para pacotes Git.`
+    `Hub packages accept an exact version or a range as a list of constraints. The range allows fixes and improvements without jumping to a major version with breaking changes. ~package-lock.yml~ pins what was resolved.`,
+    `• ~">1.1.0"~ would accept 2.x and excludes 1.1.0 itself.`,
+    `• ~revision~ is for Git packages.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/packages#hub-packages'
 },
@@ -81,8 +81,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Modelos Python não renderizam Jinja. Valores de ~target~, ~var~ ou ~env_var~ entram por configs no YAML (onde o Jinja é renderizado) e são lidos com ~dbt.config.get()~.`,
-    `O código roda remotamente na plataforma de dados, então variáveis de ambiente da máquina do dbt não estão disponíveis. O objeto ~dbt~ expõe apenas ~ref~, ~source~, ~this~, ~is_incremental~ e ~config~.`
+    `Python models don't render Jinja. Values from ~target~, ~var~ or ~env_var~ come in through configs in YAML (where Jinja is rendered) and are read with ~dbt.config.get()~.`,
+    `The code runs remotely on the data platform, so environment variables from the dbt machine aren't available. The ~dbt~ object only exposes ~ref~, ~source~, ~this~, ~is_incremental~ and ~config~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/python-models'
 },
@@ -98,8 +98,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A config ~packages~ lista as bibliotecas Python que o modelo precisa, e a plataforma (Snowpark, por exemplo) as disponibiliza na execução remota.`,
-    `~packages.yml~ é para pacotes **dbt**. Instalar localmente não adianta, porque o código não roda na máquina do dbt.`
+    `The ~packages~ config lists the Python libraries the model needs, and the platform (Snowpark, for example) makes them available in the remote run.`,
+    `~packages.yml~ is for **dbt** packages. Installing locally doesn't help, because the code doesn't run on the dbt machine.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/python-models'
 },
@@ -107,10 +107,12 @@ window.DBT_Q.push(
   id: 'd1-py-incremental', d: 'd1', type: 'fill',
   topic: 'Creating Python Models',
   stem: `Complete the blank. In an incremental Python model, ~if dbt.______:~ is true when the model runs incrementally, so you can filter the source DataFrame using ~dbt.this~.`,
-  accept: ['is_incremental'],
+  accept: [
+    `is_incremental`
+  ],
   exp: [
-    `Em Python, ~dbt.is_incremental~ cumpre o papel do macro ~is_incremental()~ do SQL, e ~dbt.this~ aponta para a tabela atual (~dbt.this.database~, ~.schema~, ~.identifier~).`,
-    `Exemplo: ~df.filter(df.updated_at >= session.sql(f"select max(updated_at) from {dbt.this}").collect()[0][0])~.`
+    `In Python, ~dbt.is_incremental~ plays the role of the SQL ~is_incremental()~ macro, and ~dbt.this~ points to the current table (~dbt.this.database~, ~.schema~, ~.identifier~).`,
+    `Example: ~df.filter(df.updated_at >= session.sql(f"select max(updated_at) from {dbt.this}").collect()[0][0])~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/python-models'
 },
@@ -126,10 +128,10 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O dbt faz os grants do objeto ficarem **iguais** à lista configurada: quem sai da lista é revogado. Para tirar todos, use ~select: []~.`,
-    `• Apagar a config ~grants~ inteira faz o dbt parar de gerenciar os grants, e ele não revoga nada.`,
-    `• ~'+select'~ adiciona aos grants herdados.`,
-    `• A chave ~revoke~ não existe.`
+    `dbt makes the object's grants **match** the configured list: anyone removed from the list is revoked. To remove everyone, use ~select: []~.`,
+    `• Deleting the whole ~grants~ config makes dbt stop managing grants, and it revokes nothing.`,
+    `• ~'+select'~ adds to the inherited grants.`,
+    `• There is no ~revoke~ key.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/grants'
 },
@@ -145,21 +147,28 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A config ~grants~ aceita Jinja, então dá para variar pelo contexto (~target.name~). Assim o mesmo código serve para dev e prod.`,
-    `• ~profiles.yml~ não aceita configs de recursos.`,
-    `• A var sugerida não está ligada a nenhuma config.`,
-    `• Revogar à mão anula o propósito de gerenciar grants pelo dbt.`
+    `The ~grants~ config accepts Jinja, so it can vary by context (~target.name~). That way the same code works for dev and prod.`,
+    `• ~profiles.yml~ doesn't accept resource configs.`,
+    `• The suggested var isn't tied to any config.`,
+    `• Revoking by hand defeats the purpose of managing grants with dbt.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/grants'
 },
 {
-  id: 'd1-grants-types', d: 'd1', type: 'multi', choose: 2,
+  id: 'd1-grants-types', d: 'd1', type: 'multi',
+  choose: 2,
   topic: 'Providing access to users to models with the "grants" config',
   stem: `Besides models, which two resource types support the ~grants~ config? (Choose two.)`,
-  options: [`Seeds`, `Snapshots`, `Sources`, `Exposures`, `Unit tests`],
+  options: [
+    `Seeds`,
+    `Snapshots`,
+    `Sources`,
+    `Exposures`,
+    `Unit tests`
+  ],
   answers: [0, 1],
   exp: [
-    `~grants~ vale para recursos que o dbt materializa como tabela ou view: **models, seeds e snapshots**. Sources são objetos que o dbt só lê, exposures não criam objetos e unit tests não persistem nada.`
+    `~grants~ applies to resources dbt materializes as a table or view: **models, seeds and snapshots**. Sources are objects dbt only reads, exposures don't create objects and unit tests persist nothing.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/grants'
 },
@@ -175,9 +184,9 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `No snapshot, a linha vigente é a que ainda não foi fechada, ou seja, ~dbt_valid_to~ é nulo. Com ~dbt_valid_to_current~ configurado (por exemplo ~'9999-12-31'~), filtre por esse valor.`,
-    `• O ~max(dbt_valid_from)~ da tabela inteira retornaria só as mudanças mais recentes.`,
-    `• ~dbt_is_deleted~ só existe com ~hard_deletes: new_record~.`
+    `In a snapshot, the current row is the one that hasn't been closed yet, meaning ~dbt_valid_to~ is null. With ~dbt_valid_to_current~ configured (for example ~'9999-12-31'~), filter on that value.`,
+    `• ~max(dbt_valid_from)~ over the whole table would return only the most recent changes.`,
+    `• ~dbt_is_deleted~ only exists with ~hard_deletes: new_record~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/snapshots'
 },
@@ -185,13 +194,19 @@ window.DBT_Q.push(
   id: 'd1-snap-missing', d: 'd1', type: 'mc',
   topic: 'Creating snapshots in YAML',
   stem: `This snapshot fails to parse. What fixes it?`,
-  code: [{ lang: 'yaml', label: 'snapshots/orders_snapshot.yml', text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'snapshots/orders_snapshot.yml',
+      text: `
     snapshots:
       - name: orders_snapshot
         relation: source('shop', 'orders')
         config:
           unique_key: order_id
-          strategy: timestamp` }],
+          strategy: timestamp`
+    }
+  ],
   options: [
     `Add ~updated_at: last_modified_at~ (the column that records when each row changed).`,
     `Add ~check_cols: all~ and keep ~strategy: timestamp~.`,
@@ -200,8 +215,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A estratégia ~timestamp~ exige ~updated_at~, a coluna que indica quando a linha mudou. Já ~check_cols~ é obrigatório na estratégia ~check~, e ~unique_key~ e ~relation~ valem para as duas.`,
-    `~hard_deletes~ e o schema são opcionais. Desde o dbt 1.9, ~target_schema~ deixou de ser obrigatório, e o snapshot usa ~generate_schema_name~.`
+    `The ~timestamp~ strategy requires ~updated_at~, the column that says when the row changed. ~check_cols~ is required for the ~check~ strategy, and ~unique_key~ and ~relation~ apply to both.`,
+    `~hard_deletes~ and the schema are optional. Since dbt 1.9, ~target_schema~ is no longer required, and the snapshot uses ~generate_schema_name~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/snapshots'
 },
@@ -217,8 +232,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~snapshot_meta_column_names~ (dbt 1.9+) renomeia as colunas de metadados que o dbt cria: ~dbt_valid_from~, ~dbt_valid_to~, ~dbt_scd_id~, ~dbt_updated_at~ e ~dbt_is_deleted~.`,
-    `~alias~ muda o nome do objeto, e ~column_types~ é config de seeds.`
+    `~snapshot_meta_column_names~ (dbt 1.9+) renames the metadata columns dbt creates: ~dbt_valid_from~, ~dbt_valid_to~, ~dbt_scd_id~, ~dbt_updated_at~ and ~dbt_is_deleted~.`,
+    `~alias~ changes the object name, and ~column_types~ is a seed config.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/snapshot_meta_column_names'
 },
@@ -234,14 +249,14 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Snapshots guardam um histórico que **não pode ser recriado**, então capture o dado o mais bruto possível e transforme depois. Lógica pesada dentro do snapshot fica congelada no histórico.`,
-    `Snapshots ignoram ~--full-refresh~. ~timestamp~ é a estratégia preferida quando existe ~updated_at~ confiável. Use um schema separado e protegido para os snapshots.`
+    `Snapshots keep a history that **can't be recreated**, so capture the data as raw as possible and transform it later. Heavy logic inside the snapshot gets frozen into the history.`,
+    `Snapshots ignore ~--full-refresh~. ~timestamp~ is the preferred strategy when there is a reliable ~updated_at~. Use a separate, protected schema for snapshots.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/snapshots'
 },
 {
   id: 'd1-inc-osc', d: 'd1', type: 'mc',
-  topic: "Selecting the optimal incremental strategy based on a dataset's characteristics",
+  topic: 'Selecting the optimal incremental strategy based on a dataset\'s characteristics',
   stem: `You added a new column, ~discount_amount~, to an incremental model with no ~on_schema_change~ config. ~dbt run~ succeeds, but the column doesn't appear in the target table. What should you do?`,
   options: [
     `Set ~on_schema_change: append_new_columns~. Existing rows will have NULL in the new column unless you run a ~--full-refresh~.`,
@@ -251,16 +266,21 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O padrão é ~on_schema_change: ignore~: colunas novas **não** entram na tabela (e remover uma coluna faz a execução falhar). Com ~append_new_columns~, a coluna é adicionada.`,
-    `Nenhuma opção preenche o histórico das linhas antigas; para isso use ~--full-refresh~ ou um update manual.`
+    `The default is ~on_schema_change: ignore~: new columns do **not** go into the table (and removing a column makes the run fail). With ~append_new_columns~, the column is added.`,
+    `No option backfills the history of old rows; for that, use ~--full-refresh~ or a manual update.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-models#what-if-the-columns-of-my-incremental-model-change'
 },
 {
   id: 'd1-inc-osc-match', d: 'd1', type: 'match',
-  topic: "Selecting the optimal incremental strategy based on a dataset's characteristics",
+  topic: 'Selecting the optimal incremental strategy based on a dataset\'s characteristics',
   stem: `Match each ~on_schema_change~ value to its behavior.`,
-  left: [`~ignore~ (default)`, `~fail~`, `~append_new_columns~`, `~sync_all_columns~`],
+  left: [
+    `~ignore~ (default)`,
+    `~fail~`,
+    `~append_new_columns~`,
+    `~sync_all_columns~`
+  ],
   right: [
     `New columns are not added; removing a column makes the run fail`,
     `The run errors when the source and target schemas diverge`,
@@ -269,15 +289,20 @@ window.DBT_Q.push(
   ],
   answer: [0, 1, 2, 3],
   exp: [
-    `Nenhum valor preenche colunas novas em linhas antigas. Contratos em incrementais exigem ~append_new_columns~ ou ~fail~. ~sync_all_columns~ pode ser caro em algumas plataformas (no BigQuery, mudar tipo exige varrer a tabela).`
+    `No value fills new columns on old rows. Contracts on incremental models require ~append_new_columns~ or ~fail~. ~sync_all_columns~ can be expensive on some platforms (on BigQuery, changing a type requires scanning the table).`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-models'
 },
 {
   id: 'd1-inc-late', d: 'd1', type: 'hotspot',
-  topic: "Selecting the optimal incremental strategy based on a dataset's characteristics",
+  topic: 'Selecting the optimal incremental strategy based on a dataset\'s characteristics',
   stem: `Events can arrive up to 2 days late, with an ~event_at~ in the past. Analysts report that late events never reach this table. Click the line that causes them to be dropped.`,
-  code: [{ lang: 'sql', label: 'models/marts/fct_events.sql', hotspot: true, text: `
+  code: [
+    {
+      lang: 'sql',
+      label: 'models/marts/fct_events.sql',
+      hotspot: true,
+      text: `
     {{ config(materialized='incremental', unique_key='event_id') }}
 
     select
@@ -288,17 +313,19 @@ window.DBT_Q.push(
     from {{ ref('stg_events') }}
     {% if is_incremental() %}
     where event_at > (select max(event_at) from {{ this }})
-    {% endif %}` }],
+    {% endif %}`
+    }
+  ],
   answer: 9,
   exp: [
-    `O filtro só traz eventos com ~event_at~ maior que o máximo já carregado. Um evento atrasado tem ~event_at~ antigo e nunca passa por ele.`,
-    `Use uma janela de segurança, como ~where event_at >= (select max(event_at) from {{ this }}) - interval '2 days'~ (ou ~dateadd~). Como existe ~unique_key~, as linhas reprocessadas são atualizadas pelo merge em vez de duplicadas. No microbatch, a config ~lookback~ faz o mesmo papel.`
+    `The filter only brings events whose ~event_at~ is greater than the maximum already loaded. A late event has an old ~event_at~ and never gets through.`,
+    `Use a safety window, such as ~where event_at >= (select max(event_at) from {{ this }}) - interval '2 days'~ (or ~dateadd~). Since there is a ~unique_key~, the reprocessed rows are updated by the merge instead of duplicated. With microbatch, the ~lookback~ config plays the same role.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-models'
 },
 {
   id: 'd1-inc-predicates', d: 'd1', type: 'mc',
-  topic: "Selecting the optimal incremental strategy based on a dataset's characteristics",
+  topic: 'Selecting the optimal incremental strategy based on a dataset\'s characteristics',
   stem: `A merge-based incremental model writes into a 5 TB target table. Each run's merge scans the whole target, but new rows can only match target rows from the last 7 days. Which config reduces the scan on the target?`,
   options: [
     `~incremental_predicates: ["DBT_INTERNAL_DEST.event_date > dateadd(day, -7, current_date)"]~`,
@@ -308,14 +335,14 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~incremental_predicates~ adiciona condições ao ~merge~ (ou ao delete), limitando quais linhas da tabela de destino são consideradas. ~DBT_INTERNAL_DEST~ é o alias da tabela de destino e ~DBT_INTERNAL_SOURCE~ o dos dados novos.`,
-    `É uma otimização avançada para volumes grandes; o dbt não valida o SQL informado.`
+    `~incremental_predicates~ adds conditions to the ~merge~ (or the delete), limiting which rows of the target table are considered. ~DBT_INTERNAL_DEST~ is the alias of the target table and ~DBT_INTERNAL_SOURCE~ the alias of the new data.`,
+    `It is an advanced optimization for large volumes; dbt doesn't validate the SQL you provide.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-strategy#about-incremental_predicates'
 },
 {
   id: 'd1-inc-merge-exclude', d: 'd1', type: 'mc',
-  topic: "Selecting the optimal incremental strategy based on a dataset's characteristics",
+  topic: 'Selecting the optimal incremental strategy based on a dataset\'s characteristics',
   stem: `An incremental model uses ~merge~ with ~unique_key='customer_id'~. When an existing customer is updated, ~first_seen_at~ must keep its original value, while every other column is refreshed. Which config achieves this?`,
   options: [
     `~merge_exclude_columns: ['first_seen_at']~`,
@@ -325,19 +352,26 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Por padrão, o merge sobrescreve todas as colunas das linhas encontradas. ~merge_exclude_columns~ lista as colunas que **não** são atualizadas; ~merge_update_columns~ faz o inverso e atualiza **só** as colunas listadas.`
+    `By default, merge overwrites every column of the matched rows. ~merge_exclude_columns~ lists the columns that are **not** updated; ~merge_update_columns~ does the opposite and updates **only** the listed columns.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-strategy'
 },
 {
-  id: 'd1-empty-cmds', d: 'd1', type: 'multi', choose: 2,
+  id: 'd1-empty-cmds', d: 'd1', type: 'multi',
+  choose: 2,
   topic: 'Validating model logic and schema definitions in dry-runs using the --empty flag',
   stem: `Which two of these commands accept the ~--empty~ flag? (Choose two.)`,
-  options: [`~dbt run~`, `~dbt build~`, `~dbt test~`, `~dbt source freshness~`, `~dbt docs generate~`],
+  options: [
+    `~dbt run~`,
+    `~dbt build~`,
+    `~dbt test~`,
+    `~dbt source freshness~`,
+    `~dbt docs generate~`
+  ],
   answers: [0, 1],
   exp: [
-    `~--empty~ existe em comandos que constroem ou compilam nós: ~run~, ~build~, ~snapshot~ e ~compile~ (e ~seed~ a partir do 1.12). Ele limita refs e sources a zero linhas, validando SQL e dependências sem custo de leitura.`,
-    `~test~, ~source freshness~ e ~docs generate~ não oferecem o flag.`
+    `~--empty~ exists on commands that build or compile nodes: ~run~, ~build~, ~snapshot~ and ~compile~ (and ~seed~ from 1.12). It limits refs and sources to zero rows, validating SQL and dependencies without read costs.`,
+    `~test~, ~source freshness~ and ~docs generate~ don't offer the flag.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/empty-flag'
 },
@@ -353,8 +387,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A documentação diz que ~--empty~ é **ignorado** em modelos Python (o ~--sample~ também). O modelo roda normalmente, com todos os dados.`,
-    `Leve isso em conta no custo de um ~build --empty~ em CI: modelos Python pesados continuam caros.`
+    `The documentation says ~--empty~ is **ignored** for Python models (so is ~--sample~). The model runs normally, with all the data.`,
+    `Keep this in mind for the cost of a ~build --empty~ in CI: heavy Python models are still expensive.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/empty-flag'
 },
@@ -370,8 +404,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~--sample~ aceita uma janela relativa (~"3 days"~) ou estática, no formato de dicionário com ~start~ e ~end~. Ele filtra as entradas que têm ~event_time~ configurado.`,
-    `~--event-time-start~/~--event-time-end~ servem para backfill de modelos **microbatch**; é outro recurso, com outro propósito.`
+    `~--sample~ accepts a relative window (~"3 days"~) or a static one, as a dictionary with ~start~ and ~end~. It filters the inputs that have ~event_time~ configured.`,
+    `~--event-time-start~/~--event-time-end~ are for backfilling **microbatch** models; that is a different feature, with a different purpose.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/sample-flag'
 },
@@ -387,8 +421,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O sample mode filtra por tempo, usando o ~event_time~ de cada ref ou source; entradas sem ~event_time~ são lidas inteiras. Está disponível em ~dbt run~ e ~dbt build~ e é ignorado em modelos Python.`,
-    `Seeds são criados normalmente, mas são amostrados quando referenciados por modelos a jusante (se tiverem ~event_time~).`
+    `Sample mode filters by time, using the ~event_time~ of each ref or source; inputs without ~event_time~ are read in full. It is available in ~dbt run~ and ~dbt build~ and is ignored for Python models.`,
+    `Seeds are built normally, but they are sampled when referenced by downstream models (if they have ~event_time~).`
   ],
   doc: 'https://docs.getdbt.com/docs/build/sample-flag'
 },
@@ -404,10 +438,10 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~.render()~ faz o ref ser renderizado como o nome completo da relação, **sem** o filtro de amostragem. O mesmo truque desliga a filtragem automática de upstreams no microbatch.`,
-    `• ~sample=false~ não existe.`,
-    `• ~--exclude~ só tira o nó da seleção; não muda como ele é lido.`,
-    `• Trocar por ~source()~ quebraria a linhagem.`
+    `~.render()~ makes the ref render as the full relation name, **without** the sampling filter. The same trick turns off automatic upstream filtering in microbatch.`,
+    `• ~sample=false~ doesn't exist.`,
+    `• ~--exclude~ only removes the node from the selection; it doesn't change how it is read.`,
+    `• Switching to ~source()~ would break the lineage.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/sample-flag'
 },
@@ -423,20 +457,27 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Backfills de microbatch usam ~--event-time-start~ e ~--event-time-end~, que são obrigatórios **juntos**. Cada lote do intervalo vira uma consulta independente. Os lotes seguem intervalos semiabertos (~>= início~ e ~< fim~), então, com o fim em 04/09, são processados os lotes de 1, 2 e 3 de setembro.`,
-    `~--sample~ é para desenvolvimento e não sobrescreve lotes de forma controlada. ~--full-refresh~ sem o intervalo reconstruiria tudo desde ~begin~.`
+    `Microbatch backfills use ~--event-time-start~ and ~--event-time-end~, which are required **together**. Each batch in the range becomes an independent query. Batches follow half-open intervals (~>= start~ and ~< end~), so with the end on September 4, the batches for September 1, 2 and 3 are processed.`,
+    `~--sample~ is for development and doesn't overwrite batches in a controlled way. ~--full-refresh~ without the range would rebuild everything since ~begin~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-microbatch#backfills'
 },
 {
-  id: 'd1-mb-required', d: 'd1', type: 'multi', choose: 3,
+  id: 'd1-mb-required', d: 'd1', type: 'multi',
+  choose: 3,
   topic: 'Understanding advanced dbt materializations such as microbatch',
   stem: `On Snowflake, besides ~materialized='incremental'~ and ~incremental_strategy='microbatch'~, which three configs are required on a microbatch model? (Choose three.)`,
-  options: [`~event_time~`, `~begin~`, `~batch_size~`, `~lookback~`, `~unique_key~`],
+  options: [
+    `~event_time~`,
+    `~begin~`,
+    `~batch_size~`,
+    `~lookback~`,
+    `~unique_key~`
+  ],
   answers: [0, 1, 2],
   exp: [
-    `Obrigatórios: ~event_time~ (a coluna de tempo da linha), ~begin~ (o "início dos tempos" para o build inicial ou completo) e ~batch_size~ (~hour~, ~day~, ~month~ ou ~year~).`,
-    `~lookback~ é opcional (padrão 1). ~unique_key~ só é exigido em algumas plataformas, como o Postgres, onde o microbatch usa merge.`
+    `Required: ~event_time~ (the row's time column), ~begin~ (the "beginning of time" for the initial or full build) and ~batch_size~ (~hour~, ~day~, ~month~ or ~year~).`,
+    `~lookback~ is optional (default 1). ~unique_key~ is only required on some platforms, such as Postgres, where microbatch uses merge.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-microbatch'
 },
@@ -452,8 +493,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O microbatch só filtra automaticamente os upstreams que têm ~event_time~ configurado; os demais são lidos por inteiro em **cada** lote. Configure ~event_time~ nos pais relevantes, mesmo que a coluna tenha outro nome.`,
-    `~.render()~ faz o oposto (desliga o filtro). Paralelizar lotes não reduz o volume lido por lote.`
+    `Microbatch only automatically filters upstream models that have ~event_time~ configured; the others are read in full in **every** batch. Configure ~event_time~ on the relevant parents, even if the column has a different name.`,
+    `~.render()~ does the opposite (it turns the filter off). Running batches in parallel doesn't reduce the volume read per batch.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-microbatch'
 },
@@ -469,8 +510,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~lookback~ define quantos lotes anteriores ao último processado são refeitos em cada execução (padrão 1). Com atraso de até 3 dias e lotes diários, ~lookback: 3~ garante que esses dados entrem.`,
-    `~begin~ é a data inicial, ~batch_size~ define a granularidade e ~concurrent_batches~ controla o paralelismo.`
+    `~lookback~ sets how many batches before the last processed one are redone on each run (default 1). With delays of up to 3 days and daily batches, ~lookback: 3~ makes sure that data gets in.`,
+    `~begin~ is the start date, ~batch_size~ sets the granularity and ~concurrent_batches~ controls parallelism.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/incremental-microbatch'
 }

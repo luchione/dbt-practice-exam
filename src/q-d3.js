@@ -1,12 +1,17 @@
-/* Domain 3 · Debugging data modeling errors · bank expansion (19) */
+/* Domain 3: logs, compiled code, YAML, fixes, flags. */
 window.DBT_Q.push(
 {
   id: 'd3-l-eof', d: 'd3', type: 'mc',
   topic: 'Understanding logged error messages',
   stem: `What is the most likely cause of this error?`,
-  code: [{ lang: 'log', text: `
+  code: [
+    {
+      lang: 'log',
+      text: `
     Compilation Error in macro cents_to_dollars (macros/cents_to_dollars.sql)
-      Reached EOF without finding a close tag for macro (searched from line 1)` }],
+      Reached EOF without finding a close tag for macro (searched from line 1)`
+    }
+  ],
   options: [
     `The macro file is missing its ~{% endmacro %}~ tag.`,
     `The ~dbt_utils~ package is not installed.`,
@@ -15,8 +20,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `*Reached EOF without finding a close tag* quer dizer que o parser chegou ao fim do arquivo sem encontrar o fechamento do bloco. Aqui falta o ~{% endmacro %}~; o mesmo acontece com ~{% endif %}~, ~{% endfor %}~ e ~{% endtest %}~.`,
-    `É um *Compilation Error*: o Jinja está estruturalmente inválido, e o problema não tem relação com pacotes ou com o warehouse.`
+    `*Reached EOF without finding a close tag* means the parser reached the end of the file without finding the block's closing tag. Here the ~{% endmacro %}~ is missing; the same happens with ~{% endif %}~, ~{% endfor %}~ and ~{% endtest %}~.`,
+    `It is a *Compilation Error*: the Jinja is structurally invalid, and the problem has nothing to do with packages or the warehouse.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -32,8 +37,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~logs/dbt.log~ registra tudo o que o dbt fez, inclusive as consultas de metadados, com mais detalhe que o terminal; os erros recentes ficam no fim. Para isolar um problema, limpe o arquivo e rode só o nó com falha.`,
-    `~target/compiled~ tem só o SELECT renderizado de cada nó, e o ~manifest.json~ descreve o projeto.`
+    `~logs/dbt.log~ records everything dbt did, including metadata queries, in more detail than the terminal; recent errors are at the end. To isolate a problem, clear the file and run only the failing node.`,
+    `~target/compiled~ only has the rendered SELECT of each node, and ~manifest.json~ describes the project.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -49,8 +54,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dbt debug~ valida a instalação, o ~dbt_project.yml~, o ~profiles.yml~ (e onde ele está) e **testa a conexão** com o warehouse. É o primeiro passo para problemas de credenciais ou rede.`,
-    `~parse~ e ~compile~ não resolvem credenciais inválidas (o ~compile~ ainda precisaria conectar). ~deps~ só instala pacotes.`
+    `~dbt debug~ validates the installation, ~dbt_project.yml~, ~profiles.yml~ (and where it is) and **tests the connection** to the warehouse. It is the first step for credential or network problems.`,
+    `~parse~ and ~compile~ don't fix invalid credentials (~compile~ would still need to connect). ~deps~ only installs packages.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/debug'
 },
@@ -66,8 +71,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `É um *Database Error*: o SQL compilou, mas o warehouse não encontrou ~stg_orders~ no schema de dev, porque você selecionou só o filho. Construa os pais (~+fct_orders~) ou use ~--defer --state~ para que refs não construídos apontem para produção.`,
-    `~stg_orders~ é um modelo, então ~ref()~ está correto.`
+    `It is a *Database Error*: the SQL compiled, but the warehouse didn't find ~stg_orders~ in the dev schema, because you selected only the child. Build the parents (~+fct_orders~) or use ~--defer --state~ so unbuilt refs point to production.`,
+    `~stg_orders~ is a model, so ~ref()~ is correct.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/defer'
 },
@@ -75,7 +80,12 @@ window.DBT_Q.push(
   id: 'd3-cc-comma', d: 'd3', type: 'hotspot',
   topic: 'Troubleshooting using compiled code',
   stem: `This model fails with ~syntax error at or near "from"~. In ~target/compiled~, the line right before ~from~ ends with ~as bank_transfer_amount,~. Click the line that must change.`,
-  code: [{ lang: 'sql', label: 'models/marts/fct_order_payments.sql', hotspot: true, text: `
+  code: [
+    {
+      lang: 'sql',
+      label: 'models/marts/fct_order_payments.sql',
+      hotspot: true,
+      text: `
     {% set methods = ['credit_card', 'coupon', 'bank_transfer'] %}
     select
         order_id,
@@ -83,11 +93,13 @@ window.DBT_Q.push(
         sum(case when payment_method = '{{ m }}' then amount end) as {{ m }}_amount,
         {% endfor %}
     from {{ ref('stg_payments') }}
-    group by 1` }],
+    group by 1`
+    }
+  ],
   answer: 4,
   exp: [
-    `O loop coloca vírgula depois de **todas** as colunas, inclusive da última, e o SQL compilado fica com ~,~ antes do ~from~. Troque a vírgula fixa por ~{% if not loop.last %},{% endif %}~.`,
-    `Ver o SQL em ~target/compiled~ é o jeito mais rápido de achar erros gerados por Jinja.`
+    `The loop adds a comma after **every** column, including the last one, and the compiled SQL ends up with a ~,~ before the ~from~. Replace the fixed comma with ~{% if not loop.last %},{% endif %}~.`,
+    `Looking at the SQL in ~target/compiled~ is the fastest way to find errors generated by Jinja.`
   ],
   doc: 'https://docs.getdbt.com/guides/using-jinja'
 },
@@ -103,7 +115,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O dbt renderiza o Jinja duas vezes: no **parse**, quando nada é executado no banco e ~run_query~ retorna ~None~, e na **execução**. ~execute~ é falso no parse e verdadeiro na execução, então proteger esse trecho com ~{% if execute %}~ evita o erro.`
+    `dbt renders Jinja twice: at **parse** time, when nothing runs in the database and ~run_query~ returns ~None~, and at **execution** time. ~execute~ is false at parse time and true at execution, so guarding that snippet with ~{% if execute %}~ avoids the error.`
   ],
   doc: 'https://docs.getdbt.com/reference/dbt-jinja-functions/execute'
 },
@@ -119,9 +131,9 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dbt compile --inline~ renderiza um trecho avulso de SQL ou Jinja (com acesso aos macros e ~ref~ do projeto) e imprime o resultado.`,
-    `• Macros não são nós selecionáveis em ~show~ ou ~docs~.`,
-    `• ~run-operation~ executa o macro, mas não mostra o SQL que ele produz quando usado num modelo.`
+    `~dbt compile --inline~ renders an ad hoc snippet of SQL or Jinja (with access to the project's macros and ~ref~) and prints the result.`,
+    `• Macros aren't selectable nodes in ~show~ or ~docs~.`,
+    `• ~run-operation~ runs the macro, but doesn't show the SQL it produces when used in a model.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/compile'
 },
@@ -129,12 +141,18 @@ window.DBT_Q.push(
   id: 'd3-y-colon', d: 'd3', type: 'mc',
   topic: 'Troubleshooting .yml compilation errors',
   stem: `Parsing fails with ~mapping values are not allowed in this context~ at line 5 of the file below. What fixes it?`,
-  code: [{ lang: 'yaml', label: 'models/staging/_stg_payments.yml', text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'models/staging/_stg_payments.yml',
+      text: `
     models:
       - name: stg_payments
         columns:
           - name: amount
-            description: Note: amounts are stored in cents` }],
+            description: Note: amounts are stored in cents`
+    }
+  ],
   options: [
     `Wrap the description in quotes, for example ~description: "Note: amounts are stored in cents"~.`,
     `Indent ~description~ two more spaces.`,
@@ -143,8 +161,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Em YAML, ~: ~ (dois-pontos seguido de espaço) dentro de um valor sem aspas é lido como o início de outro par chave/valor, o que é inválido ali. Coloque o texto entre aspas.`,
-    `O nome do arquivo YAML é livre, e ~version: 2~ é opcional nas versões atuais.`
+    `In YAML, ~: ~ (a colon followed by a space) inside an unquoted value is read as the start of another key/value pair, which is invalid there. Put the text in quotes.`,
+    `The YAML file name is free, and ~version: 2~ is optional in current versions.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -160,8 +178,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Em YAML, um valor que começa com ~{~ é lido como um dicionário inline. Jinja em YAML precisa estar entre aspas para ser tratado como string e renderizado pelo dbt.`,
-    `Blocos ~{% docs %}~ ficam em arquivos ~.md~ dentro dos paths do projeto.`
+    `In YAML, a value that starts with ~{~ is read as an inline dictionary. Jinja in YAML must be quoted to be treated as a string and rendered by dbt.`,
+    `~{% docs %}~ blocks live in ~.md~ files inside the project paths.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/description'
 },
@@ -177,8 +195,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O nome do **nó** (o nome do arquivo) precisa ser único no projeto, porque é ele que o ~ref()~ usa. Schema e alias mudam só o objeto no banco; dois ~ref('stg_payments')~ continuariam ambíguos.`,
-    `A convenção ~stg_[source]__[entity]s~ evita esse problema desde o início.`
+    `The **node** name (the file name) must be unique in the project, because that is what ~ref()~ uses. Schema and alias only change the object in the database; two ~ref('stg_payments')~ would still be ambiguous.`,
+    `The ~stg_[source]__[entity]s~ convention avoids this problem from the start.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/how-we-structure/2-staging'
 },
@@ -194,8 +212,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dbt parse~ lê o projeto, valida YAML e Jinja, monta o DAG e grava o ~manifest.json~, sem executar SQL de modelos no warehouse.`,
-    `~dbt debug~ testa a conexão. ~build --empty~ executa SQL no warehouse. ~docs serve~ só serve a documentação.`
+    `~dbt parse~ reads the project, validates YAML and Jinja, builds the DAG and writes ~manifest.json~, without running any model SQL in the warehouse.`,
+    `~dbt debug~ tests the connection. ~build --empty~ runs SQL in the warehouse. ~docs serve~ only serves the documentation.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/parse'
 },
@@ -211,8 +229,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~stg_orders+~ seleciona o modelo e **todos os descendentes**, e ~build~ constrói e testa cada um na ordem do DAG. Assim você vê o impacto da mudança a jusante.`,
-    `~+stg_orders~ pegaria os ancestrais, que não mudaram. ~run~ ou ~test~ sozinhos cobrem só metade do trabalho.`
+    `~stg_orders+~ selects the model and **all its descendants**, and ~build~ builds and tests each one in DAG order. That way you see the downstream impact of the change.`,
+    `~+stg_orders~ would select the ancestors, which didn't change. ~run~ or ~test~ alone covers only half the work.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/graph-operators'
 },
@@ -228,8 +246,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~audit_helper~ compara duas relações ou consultas linha a linha e coluna a coluna, mostrando quantas linhas batem e quais divergem. É a ferramenta indicada para refatorações que não podem mudar o resultado.`,
-    `Clone só copiaria produção, sem testar nada. Amostras e unit tests não comparam o resultado completo.`
+    `~audit_helper~ compares two relations or queries row by row and column by column, showing how many rows match and which ones differ. It is the right tool for refactors that must not change the result.`,
+    `Clone would only copy production, without testing anything. Samples and unit tests don't compare the full result.`
   ],
   doc: 'https://docs.getdbt.com/guides/refactoring-legacy-sql'
 },
@@ -245,8 +263,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~git checkout -b <branch>~ (ou ~git switch -c <branch>~) cria a branch a partir da atual e muda para ela. Depois: commits, ~git push~ da branch, PR e CI.`,
-    `Para trazer o que outros colegas já mesclaram em ~main~, use ~git pull~ (que faz ~fetch~ + ~merge~).`
+    `~git checkout -b <branch>~ (or ~git switch -c <branch>~) creates the branch from the current one and switches to it. Then: commits, ~git push~ of the branch, PR and CI.`,
+    `To bring in what teammates already merged into ~main~, use ~git pull~ (which does ~fetch~ + ~merge~).`
   ],
   doc: 'https://docs.getdbt.com/best-practices/best-practice-workflows'
 },
@@ -262,8 +280,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `CI valida o PR **antes** do merge, num schema temporário: constrói e testa só o que mudou e os dependentes (Slim CI), usando produção como referência (~--defer --state~).`,
-    `Rodar contra produção, confiar só no compile ou deixar os testes para depois do deploy anulam o propósito do CI.`
+    `CI validates the PR **before** the merge, in a temporary schema: it builds and tests only what changed and its dependents (Slim CI), using production as the reference (~--defer --state~).`,
+    `Running against production, relying only on compile or leaving the tests for after the deploy defeats the purpose of CI.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/best-practice-workflows'
 },
@@ -279,8 +297,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~--warn-error-options~ recebe um JSON com ~error~ (~"all"~ ou uma lista), ~warn~ (exceções que continuam warning) e ~silence~ (warnings suprimidos). ~include~ e ~exclude~ são os nomes antigos, descontinuados no 1.8; os valores devem ser listas.`,
-    `~--exclude~ é flag de seleção de nós, não de warnings. ~--warn-error~ sozinho promove **todos** os warnings.`
+    `~--warn-error-options~ takes a JSON with ~error~ (~"all"~ or a list), ~warn~ (exceptions that stay warnings) and ~silence~ (suppressed warnings). ~include~ and ~exclude~ are the old names, deprecated in 1.8; the values must be lists.`,
+    `~--exclude~ is a node selection flag, not a warnings flag. ~--warn-error~ alone promotes **all** warnings.`
   ],
   doc: 'https://docs.getdbt.com/reference/global-configs/warnings'
 },
@@ -296,8 +314,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Para flags globais, a precedência é: **CLI > variável de ambiente (~DBT_FAIL_FAST~) > ~flags:~ no ~dbt_project.yml~**. Flags booleanas costumam ter a forma ~--no-...~ para desligar.`,
-    `Behavior change flags são exceção: só existem no ~dbt_project.yml~.`
+    `For global flags, the precedence is: **CLI > environment variable (~DBT_FAIL_FAST~) > ~flags:~ in ~dbt_project.yml~**. Boolean flags usually have a ~--no-...~ form to turn them off.`,
+    `Behavior change flags are the exception: they only exist in ~dbt_project.yml~.`
   ],
   doc: 'https://docs.getdbt.com/reference/global-configs/about-global-configs'
 },
@@ -313,7 +331,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A config ~full_refresh~ (~true~ ou ~false~), quando definida no modelo, **tem precedência** sobre a presença ou ausência do flag ~--full-refresh~. É uma proteção comum para tabelas enormes ou com histórico difícil de reconstruir, como microbatch.`
+    `The ~full_refresh~ config (~true~ or ~false~), when set on the model, **takes precedence** over the presence or absence of the ~--full-refresh~ flag. It is a common safeguard for huge tables or tables whose history is hard to rebuild, such as microbatch.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/full_refresh'
 },
@@ -321,7 +339,13 @@ window.DBT_Q.push(
   id: 'd3-fl-match', d: 'd3', type: 'match',
   topic: 'Managing dbt behavior with flags',
   stem: `Match each flag to its effect.`,
-  left: [`~--fail-fast~`, `~--warn-error~`, `~--full-refresh~`, `~--quiet~`, `~--threads 8~`],
+  left: [
+    `~--fail-fast~`,
+    `~--warn-error~`,
+    `~--full-refresh~`,
+    `~--quiet~`,
+    `~--threads 8~`
+  ],
   right: [
     `Stops the run at the first failure`,
     `Treats every warning as an error`,
@@ -331,7 +355,7 @@ window.DBT_Q.push(
   ],
   answer: [0, 1, 2, 3, 4],
   exp: [
-    `Esses flags podem ir na linha de comando, em variáveis de ambiente ou em ~flags:~ no ~dbt_project.yml~ (os globais), com a CLI tendo precedência. ~--full-refresh~ é ignorado por modelos com ~full_refresh: false~ e por snapshots.`
+    `These flags can go on the command line, in environment variables or in ~flags:~ in ~dbt_project.yml~ (the global ones), with the CLI taking precedence. ~--full-refresh~ is ignored by models with ~full_refresh: false~ and by snapshots.`
   ],
   doc: 'https://docs.getdbt.com/reference/global-configs/about-global-configs'
 }

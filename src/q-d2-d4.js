@@ -1,16 +1,21 @@
-/* Domain 2 · Governance (15) and Domain 4 · Troubleshooting pipelines (11) · bank expansion */
+/* Domains 2 to 4: governance, debugging, troubleshooting. */
 window.DBT_Q.push(
 {
   id: 'd2-c-type', d: 'd2', type: 'mc',
   topic: 'Adding contracts to models to ensure the shape of models',
   stem: `~dim_customers~ has an enforced contract, and ~dbt build~ fails with the error below. In this case the YAML declaration is correct and the SQL is wrong. How do you fix it?`,
-  code: [{ lang: 'log', text: `
+  code: [
+    {
+      lang: 'log',
+      text: `
     Compilation Error in model dim_customers (models/marts/dim_customers.sql)
       This model has an enforced contract that failed.
 
       | column_name | definition_type | contract_type | mismatch_reason    |
       | ----------- | --------------- | ------------- | ------------------ |
-      | customer_id | TEXT            | INT           | data type mismatch |` }],
+      | customer_id | TEXT            | INT           | data type mismatch |`
+    }
+  ],
   options: [
     `Make the SQL return the declared type, for example ~cast(customer_id as int) as customer_id~.`,
     `Reorder the columns in the YAML so ~customer_id~ comes first.`,
@@ -19,8 +24,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A checagem prévia do contrato compara **nomes e tipos**: o SQL entrega ~TEXT~ e o contrato declara ~INT~. Ajuste o SQL (cast) ou, se o tipo correto for texto, corrija o ~data_type~ no YAML.`,
-    `A ordem das colunas não importa nessa checagem. Constraints e ~--full-refresh~ não mudam o tipo que o SQL retorna.`
+    `The contract's preflight check compares **names and types**: the SQL returns ~TEXT~ and the contract declares ~INT~. Fix the SQL (cast) or, if text is the right type, fix the ~data_type~ in the YAML.`,
+    `Column order doesn't matter in this check. Constraints and ~--full-refresh~ don't change the type the SQL returns.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-contracts'
 },
@@ -36,8 +41,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Remover coluna, mudar ~data_type~ ou alterar constraints de um modelo com contrato são **mudanças que quebram consumidores**, e o dbt as detecta ao comparar com o estado de produção.`,
-    `O caminho correto é versionar: publicar v2, manter v1 por um período de migração com ~deprecation_date~ e depois removê-la. Desligar o contrato ou renomear/apagar o modelo quebra os consumidores sem aviso.`
+    `Removing a column, changing a ~data_type~ or altering constraints on a model with a contract are **changes that break consumers**, and dbt detects them by comparing against the production state.`,
+    `The right path is versioning: publish v2, keep v1 for a migration period with a ~deprecation_date~ and then remove it. Turning off the contract or renaming/deleting the model breaks consumers without warning.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-versions'
 },
@@ -53,8 +58,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A checagem prévia ignora a ordem e compara nomes e tipos. No DDL, o dbt usa a ordem declarada no contrato.`,
-    `Contratos garantem a **forma** do modelo, não os valores; para valores existem constraints (quando a plataforma aplica) e data tests. Constraints são opcionais.`
+    `The preflight check ignores order and compares names and types. In the DDL, dbt uses the order declared in the contract.`,
+    `Contracts guarantee the model's **shape**, not its values; for values there are constraints (when the platform enforces them) and data tests. Constraints are optional.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-contracts'
 },
@@ -62,7 +67,12 @@ window.DBT_Q.push(
   id: 'd2-c-hotspot', d: 'd2', type: 'hotspot',
   topic: 'Adding contracts to models to ensure the shape of models',
   stem: `~dbt run~ fails with a parsing error about an invalid configuration for one column of this contracted model. Click the column definition that causes it.`,
-  code: [{ lang: 'yaml', label: 'models/marts/_fct_orders.yml', hotspot: true, text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'models/marts/_fct_orders.yml',
+      hotspot: true,
+      text: `
     models:
       - name: fct_orders
         config:
@@ -77,11 +87,13 @@ window.DBT_Q.push(
             constraints:
               - type: not_null
           - name: amount
-            data_type: numeric` }],
+            data_type: numeric`
+    }
+  ],
   answer: 10,
   exp: [
-    `Com ~contract: {enforced: true}~, **toda** coluna precisa de ~data_type~. ~created_at~ tem constraint, mas não tem tipo. Adicione, por exemplo, ~data_type: timestamp~.`,
-    `É o mesmo cenário da questão de exemplo do guia oficial: o erro de parse vem antes de qualquer teste, então ajustar o YAML é o primeiro passo.`
+    `With ~contract: {enforced: true}~, **every** column needs a ~data_type~. ~created_at~ has a constraint but no type. Add, for example, ~data_type: timestamp~.`,
+    `It is the same scenario as the sample question in the official study guide: the parse error comes before any test, so fixing the YAML is the first step.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/contract'
 },
@@ -89,11 +101,17 @@ window.DBT_Q.push(
   id: 'd2-c-project', d: 'd2', type: 'mc',
   topic: 'Adding contracts to models to ensure the shape of models',
   stem: `You want every model in ~models/marts/~ to have an enforced contract without editing each model. What should you add to ~dbt_project.yml~?`,
-  code: [{ lang: 'yaml', label: 'dbt_project.yml', text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'dbt_project.yml',
+      text: `
     models:
       jaffle_shop:
         marts:
-          # ???` }],
+          # ???`
+    }
+  ],
   options: [
     `~+contract: {enforced: true}~`,
     `~+constraints: [{type: not_null}]~`,
@@ -102,8 +120,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~contract~ pode ser definida no ~dbt_project.yml~, no YAML de propriedades ou no ~config()~ do modelo. Na pasta ~marts~, todos os modelos passam a exigir ~name~ e ~data_type~ de cada coluna no YAML.`,
-    `~access: public~ não aplica contrato, embora seja boa prática combiná-los. Constraints dependem do contrato, e não o contrário.`
+    `~contract~ can be set in ~dbt_project.yml~, in the properties YAML or in the model's ~config()~. In the ~marts~ folder, every model then requires ~name~ and ~data_type~ for each column in the YAML.`,
+    `~access: public~ doesn't enforce a contract, although combining them is good practice. Constraints depend on the contract, not the other way around.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/contract'
 },
@@ -119,8 +137,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `A convenção é ~<model_name>_v<v>~, tanto para o arquivo quanto para a relação criada (~dim_customers_v2~). ~defined_in~ permite outro arquivo, mas a documentação recomenda seguir a convenção.`,
-    `A versão "latest" também pode viver em ~dim_customers.sql~.`
+    `The convention is ~<model_name>_v<v>~, both for the file and for the relation created (~dim_customers_v2~). ~defined_in~ allows a different file, but the documentation recommends following the convention.`,
+    `The "latest" version can also live in ~dim_customers.sql~.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-versions'
 },
@@ -128,7 +146,12 @@ window.DBT_Q.push(
   id: 'd2-v-selectors', d: 'd2', type: 'match',
   topic: 'Creating different versions of our models and deprecating the old ones',
   stem: `Match each version selector to what it selects.`,
-  left: [`~version:latest~`, `~version:prerelease~`, `~version:old~`, `~version:none~`],
+  left: [
+    `~version:latest~`,
+    `~version:prerelease~`,
+    `~version:old~`,
+    `~version:none~`
+  ],
   right: [
     `Only the version marked as latest_version`,
     `Versions newer than latest_version`,
@@ -137,13 +160,14 @@ window.DBT_Q.push(
   ],
   answer: [0, 1, 2, 3],
   exp: [
-    `Esses seletores ajudam em fluxos de versão. Por exemplo, ~dbt build --exclude version:old~ evita reconstruir versões antigas em desenvolvimento, e ~--select dim_customers,version:latest~ constrói só a versão atual.`,
-    `Selecionar ~dim_customers~ sem filtro inclui **todas** as versões.`
+    `These selectors help in version workflows. For example, ~dbt build --exclude version:old~ avoids rebuilding old versions in development, and ~--select dim_customers,version:latest~ builds only the current version.`,
+    `Selecting ~dim_customers~ with no filter includes **all** versions.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods#version'
 },
 {
-  id: 'd2-v-exclude', d: 'd2', type: 'mc', codeOptions: true,
+  id: 'd2-v-exclude', d: 'd2', type: 'mc',
+  codeOptions: true,
   topic: 'Creating different versions of our models and deprecating the old ones',
   stem: `~dim_customers~ v1 has all columns declared at the model level. Version 2 is identical except that it drops ~country_name~. Which YAML declares v2 correctly?`,
   options: [
@@ -175,7 +199,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Em ~versions~, cada versão herda as colunas do modelo e declara só as diferenças. ~include: all~ com ~exclude: [...]~ é a sintaxe para "todas menos estas". Versões também podem ter configs próprias (~config:~), inclusive outra materialização.`
+    `Under ~versions~, each version inherits the model's columns and declares only the differences. ~include: all~ with ~exclude: [...]~ is the syntax for "all except these". Versions can also have their own configs (~config:~), including a different materialization.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/versions'
 },
@@ -183,9 +207,12 @@ window.DBT_Q.push(
   id: 'd2-v-pin', d: 'd2', type: 'fill',
   topic: 'Creating different versions of our models and deprecating the old ones',
   stem: `~latest_version~ of ~dim_customers~ was bumped to 2, but your model must keep reading version 1 during the migration window. Complete the blank: ~{{ ref('dim_customers', ___=1) }}~`,
-  accept: ['v', 'version'],
+  accept: [
+    `v`,
+    `version`
+  ],
   exp: [
-    `~ref('dim_customers', v=1)~ (ou ~version=1~) fixa a versão. Sem o argumento, o ref resolve para a ~latest_version~, e o dbt avisa quando existe uma versão prerelease mais nova.`
+    `~ref('dim_customers', v=1)~ (or ~version=1~) pins the version. Without the argument, the ref resolves to ~latest_version~, and dbt warns when there is a newer prerelease version.`
   ],
   doc: 'https://docs.getdbt.com/reference/dbt-jinja-functions/ref#versioned-ref'
 },
@@ -201,13 +228,14 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Constraints de várias colunas (como PK composta) **precisam** ser declaradas no nível do modelo, com a lista ~columns~. Duas constraints ~primary_key~ separadas definiriam duas PKs, o que é inválido.`,
-    `~unique_key~ é config de incrementais e não cria constraint. Lembre que constraints exigem contrato aplicado e só valem para ~table~ e ~incremental~.`
+    `Multi-column constraints (such as a composite PK) **must** be declared at the model level, with the ~columns~ list. Two separate ~primary_key~ constraints would define two PKs, which is invalid.`,
+    `~unique_key~ is an incremental config and doesn't create a constraint. Remember that constraints require an enforced contract and only apply to ~table~ and ~incremental~.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/constraints'
 },
 {
-  id: 'd2-k-fk', d: 'd2', type: 'mc', codeOptions: true,
+  id: 'd2-k-fk', d: 'd2', type: 'mc',
+  codeOptions: true,
   topic: 'Defining constraints in YAML to enforce data integrity at the platform level',
   stem: `In dbt 1.9 or later, which YAML correctly declares a foreign key from ~fct_orders.customer_id~ to ~dim_customers.customer_id~ in a way that also captures the dependency between the models?`,
   options: [
@@ -239,8 +267,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Desde o 1.9, foreign keys usam ~to~ (normalmente ~ref()~ ou ~source()~) e ~to_columns~. Com ~ref()~, o dbt registra a dependência e resolve o nome correto em cada ambiente.`,
-    `~relationships~ é um **data test**, não uma constraint. Lembre que em várias plataformas (Snowflake, BigQuery, Redshift) FKs são criadas mas não aplicadas.`
+    `Since 1.9, foreign keys use ~to~ (usually ~ref()~ or ~source()~) and ~to_columns~. With ~ref()~, dbt records the dependency and resolves the right name in each environment.`,
+    `~relationships~ is a **data test**, not a constraint. Remember that on several platforms (Snowflake, BigQuery, Redshift) FKs are created but not enforced.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/constraints'
 },
@@ -256,8 +284,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O Postgres aplica todos os tipos de constraint (~not_null~, ~unique~, ~primary_key~, ~foreign_key~, ~check~). A inserção é rejeitada e o build do modelo falha.`,
-    `O comportamento depende da plataforma: o Snowflake ignora ~check~ (com warning), e o Databricks aplica ~not_null~ e ~check~ depois que a tabela é criada. O dbt nunca filtra linhas por causa de constraints.`
+    `Postgres enforces every constraint type (~not_null~, ~unique~, ~primary_key~, ~foreign_key~, ~check~). The insert is rejected and the model build fails.`,
+    `The behavior depends on the platform: Snowflake ignores ~check~ (with a warning), and Databricks enforces ~not_null~ and ~check~ after the table is created. dbt never filters rows because of constraints.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/constraints'
 },
@@ -273,8 +301,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~private~: só modelos do **mesmo group** podem referenciá-lo; qualquer outro ~ref~ falha no parse. Para liberar o acesso, o dono pode mudar para ~protected~ (mesmo projeto) ou ~public~ (inclusive outros projetos).`,
-    `Access controla quem pode usar o modelo em ~ref()~; não é permissão no banco, que é papel dos ~grants~.`
+    `~private~: only models in the **same group** can reference it; any other ~ref~ fails at parse time. To open access, the owner can change it to ~protected~ (same project) or ~public~ (other projects too).`,
+    `Access controls who can use the model in ~ref()~; it isn't a database permission, which is the job of ~grants~.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-access'
 },
@@ -290,7 +318,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Modelos ~public~ precisam existir no warehouse para que outros projetos os leiam, e ephemeral nunca é materializado. O dbt rejeita a combinação com erro de parse (*invalid value (public) for the access field*).`
+    `~public~ models need to exist in the warehouse so other projects can read them, and ephemeral is never materialized. dbt rejects the combination with a parse error (*invalid value (public) for the access field*).`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-access'
 },
@@ -306,12 +334,11 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Access governa **referências entre modelos** (~ref~), não permissões no warehouse. O padrão é ~protected~, e recursos de governança (access, contracts, versions) valem apenas para modelos.`,
-    `Quem tem acesso de desenvolvimento ao projeto vê todos os modelos, inclusive os privados.`
+    `Access governs **references between models** (~ref~), not warehouse permissions. The default is ~protected~, and governance features (access, contracts, versions) apply only to models.`,
+    `Anyone with development access to the project sees every model, including private ones.`
   ],
   doc: 'https://docs.getdbt.com/docs/mesh/govern/model-access'
 },
-
 {
   id: 'd4-fp-cautious', d: 'd4', type: 'mc',
   topic: 'Troubleshooting and managing failure points in the DAG',
@@ -324,8 +351,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Seleção indireta: ~eager~ (padrão) roda todo teste que referencia um nó selecionado, mesmo que dependa de nós não selecionados; ~cautious~ só roda testes cujos pais estão **todos** selecionados; ~buildable~ aceita pais selecionados ou ancestrais deles; ~empty~ não roda testes indiretos.`,
-    `Outra solução é usar ~--defer~ para que ~dim_customers~ seja lido de produção.`
+    `Indirect selection: ~eager~ (default) runs every test that references a selected node, even if it depends on unselected nodes; ~cautious~ only runs tests whose parents are **all** selected; ~buildable~ accepts parents that are selected or ancestors of selected nodes; ~empty~ runs no indirect tests.`,
+    `Another solution is to use ~--defer~ so ~dim_customers~ is read from production.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/test-selection-examples'
 },
@@ -341,8 +368,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~threads~ define quantos nós o dbt executa ao mesmo tempo, sempre respeitando as dependências do DAG. Com 1 thread, tudo roda em série. Aumente com cuidado, considerando a capacidade do warehouse.`,
-    `As outras opções mudam o comportamento ou o resultado, não o paralelismo.`
+    `~threads~ sets how many nodes dbt runs at the same time, always respecting DAG dependencies. With 1 thread, everything runs serially. Increase it carefully, considering the warehouse's capacity.`,
+    `The other options change the behavior or the result, not the parallelism.`
   ],
   doc: 'https://docs.getdbt.com/docs/running-a-dbt-project/using-threads'
 },
@@ -358,8 +385,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Só ERROR (em modelo) e FAIL (em teste com severity ~error~) fazem os nós a jusante serem pulados; WARN não bloqueia nada. Ramos independentes continuam rodando.`,
-    `~--fail-fast~ interrompe a execução inteira. Para retomar depois de corrigir, use ~dbt retry~, que não roda sozinho.`
+    `Only ERROR (on a model) and FAIL (on a test with severity ~error~) cause downstream nodes to be skipped; WARN blocks nothing. Independent branches keep running.`,
+    `~--fail-fast~ stops the whole run. To resume after fixing, use ~dbt retry~, which doesn't run on its own.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/build'
 },
@@ -375,10 +402,10 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Com ~store_failures~, o dbt grava o resultado do teste (as linhas com falha) numa tabela, por padrão num schema com sufixo ~dbt_test__audit~. ~store_failures_as~ permite escolher ~table~, ~view~ ou ~ephemeral~.`,
-    `• ~limit~ só reduz quantas falhas são retornadas.`,
-    `• ~severity~ muda o status, não guarda nada.`,
-    `• Logs de debug mostram o SQL, não as linhas.`
+    `With ~store_failures~, dbt stores the test result (the failing rows) in a table, by default in a schema with the ~dbt_test__audit~ suffix. ~store_failures_as~ lets you choose ~table~, ~view~ or ~ephemeral~.`,
+    `• ~limit~ only reduces how many failures are returned.`,
+    `• ~severity~ changes the status; it stores nothing.`,
+    `• Debug logs show the SQL, not the rows.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-configs/store_failures'
 },
@@ -394,8 +421,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Quando o *build* de uma tabela fica lento demais e os dados são majoritariamente novos (append-only), incremental é o próximo passo. Para volumes muito grandes de séries temporais, microbatch também é uma opção.`,
-    `View transferiria o custo para cada consulta; ephemeral seria recalculado em cada consumidor.`
+    `When *building* a table gets too slow and the data is mostly new (append-only), incremental is the next step. For very large time-series volumes, microbatch is also an option.`,
+    `A view would move the cost to every query; ephemeral would be recomputed in every consumer.`
   ],
   doc: 'https://docs.getdbt.com/best-practices/materializations/1-guide-overview'
 },
@@ -411,8 +438,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~run_results.json~ registra cada nó executado com status, tempos (~timing~, ~execution_time~) e mensagens. É ele que o ~dbt retry~ e o seletor ~result:~ leem.`,
-    `~manifest.json~ descreve o projeto (nós, configs, dependências); ~catalog.json~ guarda metadados do warehouse para a documentação; ~sources.json~ guarda resultados de freshness.`
+    `~run_results.json~ records every executed node with its status, timings (~timing~, ~execution_time~) and messages. It is what ~dbt retry~ and the ~result:~ selector read.`,
+    `~manifest.json~ describes the project (nodes, configs, dependencies); ~catalog.json~ holds warehouse metadata for the documentation; ~sources.json~ holds freshness results.`
   ],
   doc: 'https://docs.getdbt.com/reference/artifacts/run-results-json'
 },
@@ -428,7 +455,7 @@ window.DBT_Q.push(
     `Resume the production run from the point of failure (for example, with ~dbt retry~)`
   ],
   exp: [
-    `Diagnosticar (log e categoria do erro) → reproduzir (SQL compilado) → corrigir e testar em desenvolvimento → passar por CI e revisão → retomar produção sem refazer o que já deu certo.`
+    `Diagnose (log and error category) → reproduce (compiled SQL) → fix and test in development → go through CI and review → resume production without redoing what already succeeded.`
   ],
   doc: 'https://docs.getdbt.com/guides/debug-errors'
 },
@@ -444,8 +471,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Ferramentas externas, como BIs, precisam de **objetos reais** no schema. ~--defer~ só redireciona os ~ref()~ durante a compilação do dbt e não cria nada no schema de dev. ~dbt clone~ cria clones zero-copy (ou views, onde não há suporte) com pouco custo.`,
-    `Reconstruir tudo funciona, mas é caro.`
+    `External tools, such as BI tools, need **real objects** in the schema. ~--defer~ only redirects ~ref()~ calls during dbt compilation and creates nothing in the dev schema. ~dbt clone~ creates zero-copy clones (or views, where that isn't supported) at little cost.`,
+    `Rebuilding everything works, but it is expensive.`
   ],
   doc: 'https://docs.getdbt.com/blog/to-defer-or-to-clone'
 },
@@ -461,13 +488,14 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Por padrão, ~dbt clone~ **não** recria relações que já existem no target. ~--full-refresh~ força a recriação a partir do estado informado. Para acelerar, aumente ~--threads~, porque os clones são independentes.`,
-    `~target/~ guarda artefatos locais e não afeta objetos do warehouse.`
+    `By default, ~dbt clone~ does **not** recreate relations that already exist in the target. ~--full-refresh~ forces recreation from the given state. To speed it up, increase ~--threads~, since the clones are independent.`,
+    `~target/~ holds local artifacts and doesn't affect warehouse objects.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/clone'
 },
 {
-  id: 'd4-cl-uses', d: 'd4', type: 'multi', choose: 2,
+  id: 'd4-cl-uses', d: 'd4', type: 'multi',
+  choose: 2,
   topic: 'Using dbt clone',
   stem: `Which two are documented use cases for ~dbt clone~? (Choose two.)`,
   options: [
@@ -479,8 +507,8 @@ window.DBT_Q.push(
   ],
   answers: [0, 1],
   exp: [
-    `A documentação lista: deploy blue/green, levar o estado de produção para schemas de desenvolvimento, lidar com incrementais em CI e testar mudanças em ferramentas de BI.`,
-    `O clone trabalha dentro do mesmo warehouse, a partir dos objetos descritos nos artefatos de ~--state~.`
+    `The documentation lists: blue/green deployment, bringing the production state into development schemas, handling incremental models in CI and testing changes in BI tools.`,
+    `Clone works within the same warehouse, starting from the objects described in the ~--state~ artifacts.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/clone'
 },
@@ -488,9 +516,11 @@ window.DBT_Q.push(
   id: 'd4-cl-state', d: 'd4', type: 'fill',
   topic: 'Using dbt clone',
   stem: `Complete the command that clones every model from the production artifacts into your current target: ~dbt clone --______ path/to/prod-artifacts~`,
-  accept: ['state'],
+  accept: [
+    `state`
+  ],
   exp: [
-    `~dbt clone~ clona os nós selecionados **a partir do estado informado** em ~--state~ (o ~manifest.json~ de produção). Com ~--select~ você limita o que é clonado.`
+    `~dbt clone~ clones the selected nodes **from the state given** in ~--state~ (the production ~manifest.json~). With ~--select~ you limit what is cloned.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/clone'
 }

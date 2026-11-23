@@ -1,10 +1,15 @@
-/* Domain 6 · External dependencies (8) and Domain 7 · dbt state (8) · bank expansion */
+/* Domains 6 and 7: exposures, source freshness, state, retry. */
 window.DBT_Q.push(
 {
   id: 'd6-e-hotspot', d: 'd6', type: 'hotspot',
   topic: 'Implementing dbt exposures',
   stem: `~dbt parse~ fails for this exposure. Click the line that causes the problem.`,
-  code: [{ lang: 'yaml', label: 'models/marts/_exposures.yml', hotspot: true, text: `
+  code: [
+    {
+      lang: 'yaml',
+      label: 'models/marts/_exposures.yml',
+      hotspot: true,
+      text: `
     exposures:
       - name: Weekly Revenue Dashboard
         type: dashboard
@@ -14,11 +19,13 @@ window.DBT_Q.push(
           name: Finance Analytics
           email: finance@example.com
         depends_on:
-          - ref('fct_revenue')` }],
+          - ref('fct_revenue')`
+    }
+  ],
   answer: 1,
   exp: [
-    `O ~name~ de uma exposure só pode ter letras, números e underscores (desde o 1.10, nomes com espaços geram erro por padrão). Use ~name: weekly_revenue_dashboard~ e coloque o nome amigável em ~label: Weekly Revenue Dashboard~.`,
-    `~type~, ~maturity~, ~url~, ~owner~ e ~depends_on~ estão corretos.`
+    `An exposure's ~name~ can only contain letters, numbers and underscores (since 1.10, names with spaces raise an error by default). Use ~name: weekly_revenue_dashboard~ and put the friendly name in ~label: Weekly Revenue Dashboard~.`,
+    `~type~, ~maturity~, ~url~, ~owner~ and ~depends_on~ are correct.`
   ],
   doc: 'https://docs.getdbt.com/reference/exposure-properties'
 },
@@ -34,7 +41,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~depends_on~ aceita ~ref()~, ~source()~ e ~metric()~, escritos como chamadas Jinja em texto. Assim a exposure aparece no fim do DAG ligada a tudo o que ela consome, e ~+exposure:nome~ passa a selecionar todos os ancestrais.`
+    `~depends_on~ accepts ~ref()~, ~source()~ and ~metric()~, written as Jinja calls in a string. That way the exposure appears at the end of the DAG connected to everything it consumes, and ~+exposure:name~ selects all its ancestors.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/exposures'
 },
@@ -50,7 +57,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Exposures são declarativas: não executam nada nem criam objetos. Servem para documentar quem consome os dados (com ~owner~, ~url~, ~maturity~), mostrar a linhagem até o consumidor final e permitir seleções como ~dbt build --select +exposure:nome~.`
+    `Exposures are declarative: they don't run anything or create objects. They document who consumes the data (with ~owner~, ~url~, ~maturity~), show lineage all the way to the final consumer and enable selections such as ~dbt build --select +exposure:name~.`
   ],
   doc: 'https://docs.getdbt.com/docs/build/exposures'
 },
@@ -58,9 +65,11 @@ window.DBT_Q.push(
   id: 'd6-e-maturity', d: 'd6', type: 'fill',
   topic: 'Implementing dbt exposures',
   stem: `Complete the blank. The exposure property that signals how stable or trustworthy the exposure is, with the values ~high~, ~medium~, or ~low~, is called ______.`,
-  accept: ['maturity'],
+  accept: [
+    `maturity`
+  ],
   exp: [
-    `~maturity~ indica o nível de confiança e estabilidade do consumidor declarado. Outras propriedades: ~type~ (~dashboard~, ~notebook~, ~analysis~, ~ml~, ~application~), ~owner~, ~depends_on~, ~url~, ~description~ e ~label~.`
+    `~maturity~ indicates the level of confidence and stability of the declared consumer. Other properties: ~type~ (~dashboard~, ~notebook~, ~analysis~, ~ml~, ~application~), ~owner~, ~depends_on~, ~url~, ~description~ and ~label~.`
   ],
   doc: 'https://docs.getdbt.com/reference/exposure-properties'
 },
@@ -76,8 +85,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~loaded_at_query~ (1.10+) é uma alternativa a ~loaded_at_field~: um SQL que retorna o timestamp da última carga. Definir os dois no mesmo recurso gera erro de parse.`,
-    `~filter~ só adiciona um WHERE à consulta padrão. Os períodos válidos em ~warn_after~ e ~error_after~ são ~minute~, ~hour~ e ~day~.`
+    `~loaded_at_query~ (1.10+) is an alternative to ~loaded_at_field~: a SQL query that returns the timestamp of the last load. Setting both on the same resource raises a parse error.`,
+    `~filter~ only adds a WHERE to the default query. The valid periods in ~warn_after~ and ~error_after~ are ~minute~, ~hour~ and ~day~.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/freshness'
 },
@@ -93,8 +102,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Sem ~loaded_at_field~, adapters compatíveis usam metadados do warehouse (como a data da última alteração) para medir a freshness.`,
-    `~dbt build~ **não** roda freshness; é um comando separado (~dbt source freshness~). Os períodos são só ~minute~, ~hour~ e ~day~, e ~freshness: null~ **desliga** a checagem.`
+    `Without ~loaded_at_field~, supported adapters use warehouse metadata (such as the last-modified time) to measure freshness.`,
+    `~dbt build~ does **not** run freshness; it is a separate command (~dbt source freshness~). The periods are only ~minute~, ~hour~ and ~day~, and ~freshness: null~ **turns off** the check.`
   ],
   doc: 'https://docs.getdbt.com/reference/resource-properties/freshness'
 },
@@ -110,8 +119,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~source_status:fresher~ compara o ~sources.json~ atual com o do estado anterior e seleciona as sources com dados mais novos; o ~+~ inclui tudo a jusante. Por isso é preciso rodar ~dbt source freshness~ antes, gerando um ~sources.json~ novo.`,
-    `~state:modified~ compara **código**, não dados.`
+    `~source_status:fresher~ compares the current ~sources.json~ with the one from the previous state and selects the sources with newer data; the ~+~ includes everything downstream. That is why you need to run ~dbt source freshness~ first, generating a new ~sources.json~.`,
+    `~state:modified~ compares **code**, not data.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods#source_status'
 },
@@ -127,12 +136,11 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Cada source recebe PASS, WARN ou ERROR conforme os limites. Qualquer ERROR faz o comando terminar com código de erro, o que interrompe pipelines que dependem dele. WARN não falha a execução.`,
-    `O dbt não carrega dados nem pula modelos por causa da freshness. Para reagir aos resultados, use o seletor ~source_status~.`
+    `Each source gets PASS, WARN or ERROR according to the thresholds. Any ERROR makes the command exit with an error code, which stops pipelines that depend on it. WARN doesn't fail the run.`,
+    `dbt doesn't load data or skip models because of freshness. To react to the results, use the ~source_status~ selector.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/source'
 },
-
 {
   id: 'd7-st-favor', d: 'd7', type: 'mc',
   topic: 'Understanding state and state selection',
@@ -145,7 +153,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Por padrão, o ~--defer~ só usa produção para pais **que não existem** no seu ambiente. Com ~--favor-state~, o dbt usa o objeto do manifest de ~--state~ mesmo quando existe uma versão no seu target.`
+    `By default, ~--defer~ only uses production for parents **that don't exist** in your environment. With ~--favor-state~, dbt uses the object from the ~--state~ manifest even when a version exists in your target.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/defer'
 },
@@ -161,8 +169,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Defer muda **como os ~ref()~ são resolvidos**: pais não selecionados e inexistentes no seu ambiente apontam para os objetos de produção descritos no ~manifest.json~ de ~--state~. Nada é copiado nem reconstruído.`,
-    `Para criar objetos reais no seu schema, o comando é ~dbt clone~.`
+    `Defer changes **how ~ref()~ calls are resolved**: parents that are unselected and missing from your environment point to the production objects described in the ~--state~ ~manifest.json~. Nothing is copied or rebuilt.`,
+    `To create real objects in your schema, the command is ~dbt clone~.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/defer'
 },
@@ -178,8 +186,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~state:modified~ compara o manifest atual com o de produção. Configs que dependem do ambiente (~target.name~, ~env_var~, ~var~) renderizam valores diferentes em CI e geram **falsos positivos**.`,
-    `Evite esse tipo de lógica em configs ou centralize-a em macros como ~generate_schema_name~ (mudanças de schema e alias são tratadas por ~state:modified.relation~). Tags e meta não contam como modificação.`
+    `~state:modified~ compares the current manifest with the production one. Configs that depend on the environment (~target.name~, ~env_var~, ~var~) render different values in CI and produce **false positives**.`,
+    `Avoid this kind of logic in configs or centralize it in macros such as ~generate_schema_name~ (schema and alias changes are handled by ~state:modified.relation~). Tags and meta don't count as modifications.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/state-comparison-caveats'
 },
@@ -195,7 +203,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `Para seeds menores que 1 MiB, o dbt compara o conteúdo. A partir de 1 MiB, compara só o **caminho**, para não pesar no manifest. Nesse caso, selecione o seed explicitamente no CI (por exemplo, ~--select state:modified+ my_seed+~).`
+    `For seeds smaller than 1 MiB, dbt compares the contents. From 1 MiB up, it compares only the **path**, to keep the manifest light. In that case, select the seed explicitly in CI (for example, ~--select state:modified+ my_seed+~).`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods#state'
 },
@@ -203,14 +211,23 @@ window.DBT_Q.push(
   id: 'd7-st-artifacts', d: 'd7', type: 'match',
   topic: 'Understanding state and state selection',
   stem: `Match each selector to the artifact it reads from the ~--state~ directory. One option is not used.`,
-  left: [`~state:modified~`, `~result:fail~`, `~source_status:fresher~`],
-  right: [`manifest.json`, `run_results.json`, `sources.json`, `catalog.json`],
+  left: [
+    `~state:modified~`,
+    `~result:fail~`,
+    `~source_status:fresher~`
+  ],
+  right: [
+    `manifest.json`,
+    `run_results.json`,
+    `sources.json`,
+    `catalog.json`
+  ],
   answer: [0, 1, 2],
   exp: [
-    `• ~manifest.json~ descreve o projeto (código e configs), usado por ~state:~ e por ~--defer~.`,
-    `• ~run_results.json~ guarda o status de cada nó, usado por ~result:~ e pelo ~dbt retry~.`,
-    `• ~sources.json~ guarda os resultados de ~dbt source freshness~, usado por ~source_status:~.`,
-    `• ~catalog.json~ é gerado por ~dbt docs generate~ para a documentação.`
+    `• ~manifest.json~ describes the project (code and configs), used by ~state:~ and by ~--defer~.`,
+    `• ~run_results.json~ holds each node's status, used by ~result:~ and by ~dbt retry~.`,
+    `• ~sources.json~ holds the results of ~dbt source freshness~, used by ~source_status:~.`,
+    `• ~catalog.json~ is generated by ~dbt docs generate~ for the documentation.`
   ],
   doc: 'https://docs.getdbt.com/reference/node-selection/methods'
 },
@@ -226,8 +243,8 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `~dbt retry~ lê o ~run_results.json~ e retoma do ponto de falha: o nó que falhou (aqui, o teste) e os nós pulados por causa dele. O que já tinha passado não é refeito.`,
-    `Se nada tivesse falhado, o retry terminaria sem executar nada.`
+    `~dbt retry~ reads ~run_results.json~ and resumes from the point of failure: the node that failed (here, the test) and the nodes skipped because of it. What had already passed isn't redone.`,
+    `If nothing had failed, retry would finish without running anything.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/retry'
 },
@@ -243,7 +260,7 @@ window.DBT_Q.push(
   ],
   answer: 0,
   exp: [
-    `O retry depende dos nós registrados no ~run_results.json~. Se a falha aconteceu antes de qualquer nó rodar (conexão, permissões), não há ponto de onde retomar, e o certo é rodar de novo o comando completo.`
+    `Retry depends on the nodes recorded in ~run_results.json~. If the failure happened before any node ran (connection, permissions), there is no point to resume from, and the right move is to run the full command again.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/retry'
 },
@@ -251,9 +268,14 @@ window.DBT_Q.push(
   id: 'd7-r-artifact', d: 'd7', type: 'fill',
   topic: 'Using dbt retry',
   stem: `Complete the blank with the artifact file name. ~dbt retry~ decides where to resume by reading ______ from the previous invocation.`,
-  accept: ['run_results.json', 'run_results', 'run results', 'run_results json'],
+  accept: [
+    `run_results.json`,
+    `run_results`,
+    `run results`,
+    `run_results json`
+  ],
   exp: [
-    `~run_results.json~ guarda o status de cada nó da última execução. O retry re-executa os que tiveram erro ou falha e os que foram pulados. Ele suporta ~build~, ~run~, ~test~, ~seed~, ~snapshot~, ~compile~, ~clone~, ~docs generate~ e ~run-operation~.`
+    `~run_results.json~ holds the status of each node from the last run. Retry re-executes the ones that errored or failed and the ones that were skipped. It supports ~build~, ~run~, ~test~, ~seed~, ~snapshot~, ~compile~, ~clone~, ~docs generate~ and ~run-operation~.`
   ],
   doc: 'https://docs.getdbt.com/reference/commands/retry'
 }
